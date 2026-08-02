@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>Example Atom Feed</title>
+    <subtitle>An example feed for tests</subtitle>
+    <link href="https://example.test/feed.atom" rel="self"/>
+    <link href="https://example.test"/>
+    <id>https://example.test/</id>
+    <updated>2026-01-06T09:00:00Z</updated>
+    <entry>
+        <title>First Atom post</title>
+        <link href="https://example.test/first-post"/>
+        <id>https://example.test/first-post</id>
+        <updated>2026-01-06T09:00:00Z</updated>
+        <author>
+            <name>Ada Lovelace</name>
+        </author>
+        <content type="html">&lt;p&gt;The first post's content.&lt;/p&gt;</content>
+    </entry>
+</feed>

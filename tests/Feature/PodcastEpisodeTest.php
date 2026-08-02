@@ -84,4 +84,39 @@ class PodcastEpisodeTest extends TestCase
 
         $this->assertSame('https://example.test/artwork/show.jpg', $episode->image_url);
     }
+
+    public function test_it_extracts_enclosures_from_an_atom_feeds_link_rel_syntax(): void
+    {
+        // Atom has no <enclosure> tag; it's a <link rel="enclosure" href="..."/>
+        // instead, parsed by a differently-configured instance of the same
+        // feed-io Media rule (href instead of url as the source attribute).
+        $feed = Feed::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-atom-podcast.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        $episode = Entry::where('guid', 'https://example.test/episodes/5')->sole();
+
+        $this->assertSame('https://example.test/audio/episode-5.mp3', $episode->enclosure_url);
+        $this->assertSame('audio/mpeg', $episode->enclosure_type);
+        $this->assertSame(12345678, $episode->enclosure_length);
+        $this->assertSame(1100, $episode->duration_seconds); // 18:20
+        $this->assertSame(5, $episode->episode_number);
+        $this->assertSame(1, $episode->season_number);
+        $this->assertSame('https://example.test/artwork/episode-5.jpg', $episode->image_url);
+        $this->assertTrue($episode->isPodcastEpisode());
+    }
+
+    public function test_it_leaves_podcast_fields_null_for_a_plain_atom_entry(): void
+    {
+        $feed = Feed::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-atom-podcast.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        $article = Entry::where('guid', 'https://example.test/articles/1')->sole();
+
+        $this->assertNull($article->enclosure_url);
+        $this->assertFalse($article->isPodcastEpisode());
+    }
 }

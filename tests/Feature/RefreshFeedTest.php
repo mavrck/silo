@@ -37,6 +37,31 @@ class RefreshFeedTest extends TestCase
         $this->assertSame('Existing Title', $feed->title);
     }
 
+    public function test_it_parses_a_plain_atom_feed(): void
+    {
+        $feed = Feed::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-atom-feed.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        $this->assertDatabaseCount('entries', 1);
+        $this->assertDatabaseHas('entries', [
+            'feed_id' => $feed->id,
+            'guid' => 'https://example.test/first-post',
+            'title' => 'First Atom post',
+            'author' => 'Ada Lovelace',
+            'url' => 'https://example.test/first-post',
+        ]);
+
+        $entry = $feed->entries()->sole();
+        // The sanitizer HTML-entity-encodes the apostrophe on the way out.
+        $this->assertStringContainsString('The first post', $entry->content);
+        $this->assertStringContainsString('content.', $entry->content);
+
+        $feed->refresh();
+        $this->assertNull($feed->last_fetch_error);
+    }
+
     public function test_it_does_not_duplicate_entries_on_repeated_fetches(): void
     {
         $feed = Feed::factory()->create();
