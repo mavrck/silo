@@ -23,7 +23,7 @@ class RefreshFeed implements ShouldQueue
     public function handle(FeedIo $feedIo, ContentSanitizer $sanitizer): void
     {
         try {
-            $result = $feedIo->read($this->feed->url, $this->feed->last_modified_at);
+            $result = $feedIo->read($this->feed->url, null, $this->feed->last_modified_at);
         } catch (Throwable $e) {
             $this->feed->forceFill([
                 'last_fetched_at' => now(),

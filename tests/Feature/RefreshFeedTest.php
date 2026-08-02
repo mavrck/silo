@@ -50,6 +50,38 @@ class RefreshFeedTest extends TestCase
         $this->assertDatabaseCount('entries', 2);
     }
 
+    public function test_it_can_refresh_a_feed_again_after_the_server_sent_a_last_modified_header(): void
+    {
+        // Regression test: a prior bug passed the feed's last_modified_at as
+        // FeedIo::read()'s second argument (a ?FeedInterface), rather than its
+        // third (?DateTime). Every other test's fake responses omit
+        // Last-Modified, so last_modified_at stayed null and the misplaced
+        // argument was accepted silently — only a feed whose server actually
+        // sends the header (like the real one this was caught against) hits
+        // the type error on the second fetch.
+        $feed = Feed::factory()->create();
+
+        $this->fakeFeedIo([new Response(200, [
+            'Last-Modified' => 'Mon, 06 Jan 2026 09:00:00 GMT',
+        ], file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml'))]);
+        RefreshFeed::dispatchSync($feed);
+        $feed->refresh();
+        $this->assertNotNull($feed->last_modified_at);
+
+        // A non-null modifiedSince makes the real HTTP client issue a
+        // conditional HEAD check before the GET, so two responses are queued.
+        $updatedHeaders = ['Last-Modified' => 'Tue, 07 Jan 2026 09:00:00 GMT'];
+        $this->fakeFeedIo([
+            new Response(200, $updatedHeaders, ''),
+            new Response(200, $updatedHeaders, file_get_contents(__DIR__.'/../Fixtures/sample-feed-updated.xml')),
+        ]);
+        RefreshFeed::dispatchSync($feed);
+
+        $feed->refresh();
+        $this->assertNull($feed->last_fetch_error);
+        $this->assertDatabaseCount('entries', 2);
+    }
+
     public function test_it_records_an_error_when_the_feed_cannot_be_read(): void
     {
         $feed = Feed::factory()->create();
