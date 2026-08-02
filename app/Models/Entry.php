@@ -21,6 +21,13 @@ class Entry extends Model
         'author',
         'content',
         'published_at',
+        'enclosure_url',
+        'enclosure_type',
+        'enclosure_length',
+        'duration_seconds',
+        'episode_number',
+        'season_number',
+        'image_url',
     ];
 
     protected function casts(): array
@@ -31,6 +38,10 @@ class Entry extends Model
             'is_read' => 'boolean',
             'is_starred' => 'boolean',
             'summarized_at' => 'datetime',
+            'enclosure_length' => 'integer',
+            'duration_seconds' => 'integer',
+            'episode_number' => 'integer',
+            'season_number' => 'integer',
         ];
     }
 
@@ -79,5 +90,10 @@ class Entry extends Model
     public function setSummary(string $summary): void
     {
         $this->forceFill(['summary' => $summary, 'summarized_at' => now()])->save();
+    }
+
+    public function isPodcastEpisode(): bool
+    {
+        return ! is_null($this->enclosure_url);
     }
 }

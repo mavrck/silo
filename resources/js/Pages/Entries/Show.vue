@@ -4,6 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { formatDuration } from '@/utils/duration';
 import type { Entry, Tag } from '@/types';
 
 const props = defineProps<{
@@ -113,6 +114,54 @@ function removeTag(tag: Tag) {
                     >
                         View original &rarr;
                     </a>
+
+                    <div
+                        v-if="entry.enclosure_url"
+                        class="mt-4 flex gap-4 rounded-md border border-gray-200 p-4 dark:border-gray-700"
+                    >
+                        <img
+                            v-if="entry.image_url"
+                            :src="entry.image_url"
+                            alt=""
+                            class="h-16 w-16 shrink-0 rounded object-cover"
+                        />
+                        <div class="min-w-0 flex-1">
+                            <p
+                                v-if="entry.season_number || entry.episode_number"
+                                class="mb-1 text-xs text-gray-500 dark:text-gray-400"
+                            >
+                                <span v-if="entry.season_number">Season {{ entry.season_number }}</span>
+                                <span v-if="entry.season_number && entry.episode_number"> &middot; </span>
+                                <span v-if="entry.episode_number">Episode {{ entry.episode_number }}</span>
+                                <span v-if="entry.duration_seconds">
+                                    &middot; {{ formatDuration(entry.duration_seconds) }}
+                                </span>
+                            </p>
+                            <audio
+                                v-if="entry.enclosure_type?.startsWith('audio/')"
+                                :src="entry.enclosure_url"
+                                controls
+                                preload="none"
+                                class="w-full"
+                            />
+                            <video
+                                v-else-if="entry.enclosure_type?.startsWith('video/')"
+                                :src="entry.enclosure_url"
+                                controls
+                                preload="none"
+                                class="w-full rounded"
+                            />
+                            <a
+                                v-else
+                                :href="entry.enclosure_url"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-sm text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                            >
+                                Download episode &rarr;
+                            </a>
+                        </div>
+                    </div>
 
                     <div
                         v-if="entry.summary"

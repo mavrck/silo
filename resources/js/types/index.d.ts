@@ -67,6 +67,13 @@ export interface Entry {
     is_starred: boolean;
     feed?: EntryFeed;
     tags?: Tag[];
+    enclosure_url: string | null;
+    enclosure_type: string | null;
+    enclosure_length: number | null;
+    duration_seconds: number | null;
+    episode_number: number | null;
+    season_number: number | null;
+    image_url: string | null;
 }
 
 export interface SavedSearchFilters {

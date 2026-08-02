@@ -6,6 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { formatDuration } from '@/utils/duration';
 import type {
     CategoryWithFeedCounts,
     Entry,
@@ -359,19 +360,29 @@ function submitSaveForm() {
                                     class="min-w-0 flex-1"
                                 >
                                     <p
-                                        class="truncate"
+                                        class="flex items-center gap-1.5 truncate"
                                         :class="
                                             entry.is_read
                                                 ? 'text-gray-500 dark:text-gray-400'
                                                 : 'font-medium text-gray-900 dark:text-gray-100'
                                         "
                                     >
-                                        {{ entry.title }}
+                                        <span
+                                            v-if="entry.enclosure_url"
+                                            class="shrink-0 text-amber-600 dark:text-amber-400"
+                                            title="Podcast episode"
+                                        >
+                                            &#9658;
+                                        </span>
+                                        <span class="truncate">{{ entry.title }}</span>
                                     </p>
                                     <p class="truncate text-xs text-gray-500 dark:text-gray-400">
                                         {{ entry.feed?.title }}
                                         &middot;
                                         {{ formatDate(entry.published_at) }}
+                                        <template v-if="entry.duration_seconds">
+                                            &middot; {{ formatDuration(entry.duration_seconds) }}
+                                        </template>
                                         <template v-if="entry.tags?.length">
                                             &middot;
                                             <span

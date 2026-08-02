@@ -4,8 +4,10 @@ namespace App\Jobs;
 
 use App\Models\Feed;
 use App\Services\Feeds\ContentSanitizer;
+use App\Services\Feeds\PodcastEpisodeParser;
 use FeedIo\Adapter\NotFoundException;
 use FeedIo\Feed\ItemInterface;
+use FeedIo\FeedInterface;
 use FeedIo\FeedIo;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,7 +22,7 @@ class RefreshFeed implements ShouldQueue
 
     public function __construct(public readonly Feed $feed) {}
 
-    public function handle(FeedIo $feedIo, ContentSanitizer $sanitizer): void
+    public function handle(FeedIo $feedIo, ContentSanitizer $sanitizer, PodcastEpisodeParser $podcastParser): void
     {
         try {
             $result = $feedIo->read($this->feed->url, null, $this->feed->last_modified_at);
@@ -49,7 +51,7 @@ class RefreshFeed implements ShouldQueue
         $feedData = $result->getFeed();
 
         foreach ($feedData as $item) {
-            $this->storeItem($item, $sanitizer);
+            $this->storeItem($item, $feedData, $sanitizer, $podcastParser);
         }
 
         $this->feed->forceFill([
@@ -62,7 +64,11 @@ class RefreshFeed implements ShouldQueue
         ])->save();
     }
 
-    protected function storeItem(ItemInterface $item, ContentSanitizer $sanitizer): void
+    protected function storeItem(
+        ItemInterface $item,
+        FeedInterface $feedData,
+        ContentSanitizer $sanitizer,
+        PodcastEpisodeParser $podcastParser): void
     {
         $guid = $item->getPublicId() ?: sha1(($item->getLink() ?? '').'|'.($item->getTitle() ?? ''));
 
@@ -74,6 +80,7 @@ class RefreshFeed implements ShouldQueue
                 'author' => $item->getAuthor()?->getName(),
                 'content' => $sanitizer->sanitize($item->getContent() ?? $item->getSummary()),
                 'published_at' => $item->getLastModified(),
+                ...$podcastParser->extract($item, $feedData),
             ]
         );
 
