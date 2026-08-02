@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Feed;
+use App\Services\Feeds\ContentSanitizer;
 use FeedIo\Adapter\NotFoundException;
 use FeedIo\Feed\ItemInterface;
 use FeedIo\FeedIo;
@@ -19,7 +20,7 @@ class RefreshFeed implements ShouldQueue
 
     public function __construct(public readonly Feed $feed) {}
 
-    public function handle(FeedIo $feedIo): void
+    public function handle(FeedIo $feedIo, ContentSanitizer $sanitizer): void
     {
         try {
             $result = $feedIo->read($this->feed->url, $this->feed->last_modified_at);
@@ -48,7 +49,7 @@ class RefreshFeed implements ShouldQueue
         $feedData = $result->getFeed();
 
         foreach ($feedData as $item) {
-            $this->storeItem($item);
+            $this->storeItem($item, $sanitizer);
         }
 
         $this->feed->forceFill([
@@ -61,7 +62,7 @@ class RefreshFeed implements ShouldQueue
         ])->save();
     }
 
-    protected function storeItem(ItemInterface $item): void
+    protected function storeItem(ItemInterface $item, ContentSanitizer $sanitizer): void
     {
         $guid = $item->getPublicId() ?: sha1(($item->getLink() ?? '').'|'.($item->getTitle() ?? ''));
 
@@ -71,7 +72,7 @@ class RefreshFeed implements ShouldQueue
                 'url' => $item->getLink(),
                 'title' => $item->getTitle(),
                 'author' => $item->getAuthor()?->getName(),
-                'content' => $item->getContent() ?? $item->getSummary(),
+                'content' => $sanitizer->sanitize($item->getContent() ?? $item->getSummary()),
                 'published_at' => $item->getLastModified(),
             ]
         );

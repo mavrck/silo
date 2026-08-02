@@ -26,4 +26,14 @@ class EntryFactory extends Factory
             'published_at' => fake()->dateTimeBetween('-1 month'),
         ];
     }
+
+    public function read(): static
+    {
+        return $this->state(fn () => ['is_read' => true, 'read_at' => now()]);
+    }
+
+    public function starred(): static
+    {
+        return $this->state(fn () => ['is_starred' => true]);
+    }
 }

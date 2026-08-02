@@ -26,6 +26,51 @@ export interface CategoryWithFeeds extends Category {
     feeds: Feed[];
 }
 
+export interface FeedWithUnreadCount extends Feed {
+    unread_count: number;
+}
+
+export interface CategoryWithFeedCounts extends Category {
+    feeds: FeedWithUnreadCount[];
+}
+
+export interface EntryFeed {
+    id: number;
+    title: string;
+    category_id?: number;
+    site_url?: string | null;
+}
+
+export interface Entry {
+    id: number;
+    feed_id: number;
+    guid: string;
+    url: string | null;
+    title: string | null;
+    author: string | null;
+    content: string | null;
+    published_at: string | null;
+    is_read: boolean;
+    read_at: string | null;
+    is_starred: boolean;
+    feed?: EntryFeed;
+}
+
+export interface Paginated<T> {
+    data: T[];
+    links: { url: string | null; label: string; active: boolean }[];
+    current_page: number;
+    last_page: number;
+    total: number;
+}
+
+export interface EntryFilters {
+    feed_id?: string;
+    category_id?: string;
+    unread?: string;
+    starred?: string;
+}
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,
 > = T & {

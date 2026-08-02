@@ -60,4 +60,17 @@ class RefreshFeedTest extends TestCase
         $this->assertNotNull($feed->last_fetch_error);
         $this->assertDatabaseCount('entries', 0);
     }
+
+    public function test_it_strips_dangerous_html_from_entry_content(): void
+    {
+        $feed = Feed::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed-malicious.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        $entry = $feed->entries()->sole();
+        $this->assertStringContainsString('<p>Safe text</p>', $entry->content);
+        $this->assertStringNotContainsString('<script', $entry->content);
+        $this->assertStringNotContainsString('onerror', $entry->content);
+    }
 }

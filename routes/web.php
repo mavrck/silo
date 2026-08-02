@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\EntryController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\OpmlController;
 use App\Http\Controllers\ProfileController;
@@ -34,6 +35,12 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/opml/export', [OpmlController::class, 'export'])->name('opml.export');
     Route::post('/opml/import', [OpmlController::class, 'import'])->name('opml.import');
+
+    Route::get('/entries', [EntryController::class, 'index'])->name('entries.index');
+    Route::get('/entries/{entry}', [EntryController::class, 'show'])->name('entries.show');
+    Route::patch('/entries/{entry}/read', [EntryController::class, 'markRead'])->name('entries.read');
+    Route::patch('/entries/{entry}/unread', [EntryController::class, 'markUnread'])->name('entries.unread');
+    Route::patch('/entries/{entry}/star', [EntryController::class, 'toggleStar'])->name('entries.star');
 });
 
 require __DIR__.'/auth.php';

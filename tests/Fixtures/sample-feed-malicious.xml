@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Example Feed</title>
+        <description>An example feed for tests</description>
+        <link>https://example.test</link>
+        <item>
+            <title>Malicious post</title>
+            <description><![CDATA[<p>Safe text</p><script>alert('xss')</script><img src=x onerror="alert('xss')">]]></description>
+            <link>https://example.test/malicious-post</link>
+            <guid>https://example.test/malicious-post</guid>
+            <pubDate>Mon, 06 Jan 2026 09:00:00 GMT</pubDate>
+        </item>
+    </channel>
+</rss>
