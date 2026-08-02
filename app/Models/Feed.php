@@ -20,6 +20,7 @@ class Feed extends Model
         'site_url',
         'description',
         'favicon_url',
+        'summarize',
     ];
 
     protected function casts(): array
@@ -27,6 +28,7 @@ class Feed extends Model
         return [
             'last_modified_at' => 'datetime',
             'last_fetched_at' => 'datetime',
+            'summarize' => 'boolean',
         ];
     }
 

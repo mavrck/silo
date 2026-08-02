@@ -30,6 +30,7 @@ class Entry extends Model
             'read_at' => 'datetime',
             'is_read' => 'boolean',
             'is_starred' => 'boolean',
+            'summarized_at' => 'datetime',
         ];
     }
 
@@ -73,5 +74,10 @@ class Entry extends Model
     public function toggleStarred(): void
     {
         $this->forceFill(['is_starred' => ! $this->is_starred])->save();
+    }
+
+    public function setSummary(string $summary): void
+    {
+        $this->forceFill(['summary' => $summary, 'summarized_at' => now()])->save();
     }
 }

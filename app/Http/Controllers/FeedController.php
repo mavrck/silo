@@ -54,6 +54,7 @@ class FeedController extends Controller
             'url' => $data['url'],
             'site_url' => $feedData->getLink(),
             'description' => $feedData->getDescription(),
+            'summarize' => $data['summarize'] ?? false,
         ]);
 
         RefreshFeed::dispatch($feed);
@@ -66,6 +67,15 @@ class FeedController extends Controller
         Gate::authorize('delete', $feed);
 
         $feed->delete();
+
+        return back();
+    }
+
+    public function toggleSummarize(Feed $feed): RedirectResponse
+    {
+        Gate::authorize('update', $feed);
+
+        $feed->update(['summarize' => ! $feed->summarize]);
 
         return back();
     }

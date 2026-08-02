@@ -66,7 +66,7 @@ class RefreshFeed implements ShouldQueue
     {
         $guid = $item->getPublicId() ?: sha1(($item->getLink() ?? '').'|'.($item->getTitle() ?? ''));
 
-        $this->feed->entries()->updateOrCreate(
+        $entry = $this->feed->entries()->updateOrCreate(
             ['guid' => $guid],
             [
                 'url' => $item->getLink(),
@@ -76,5 +76,9 @@ class RefreshFeed implements ShouldQueue
                 'published_at' => $item->getLastModified(),
             ]
         );
+
+        if ($entry->wasRecentlyCreated && $this->feed->summarize) {
+            SummarizeEntry::dispatch($entry);
+        }
     }
 }

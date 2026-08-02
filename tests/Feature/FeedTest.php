@@ -47,6 +47,65 @@ class FeedTest extends TestCase
         Bus::assertDispatched(RefreshFeed::class);
     }
 
+    public function test_summarize_defaults_to_off_when_subscribing(): void
+    {
+        Bus::fake();
+        $user = User::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+        ]);
+
+        $this->assertDatabaseHas('feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'summarize' => false,
+        ]);
+    }
+
+    public function test_user_can_enable_summarize_when_subscribing(): void
+    {
+        Bus::fake();
+        $user = User::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'summarize' => true,
+        ]);
+
+        $this->assertDatabaseHas('feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'summarize' => true,
+        ]);
+    }
+
+    public function test_user_can_toggle_summarize_on_their_own_feed(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create(['summarize' => false]);
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feed->id}/summarize");
+
+        $response->assertRedirect();
+        $this->assertTrue($feed->fresh()->summarize);
+
+        $this->actingAs($user)->patch("/feeds/{$feed->id}/summarize");
+        $this->assertFalse($feed->fresh()->summarize);
+    }
+
+    public function test_user_cannot_toggle_summarize_on_another_users_feed(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create(['summarize' => false]);
+
+        $response = $this->actingAs($intruder)->patch("/feeds/{$feed->id}/summarize");
+
+        $response->assertForbidden();
+        $this->assertFalse($feed->fresh()->summarize);
+    }
+
     public function test_subscribing_without_a_category_creates_an_uncategorized_one(): void
     {
         Bus::fake();

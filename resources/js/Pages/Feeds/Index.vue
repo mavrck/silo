@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Checkbox from '@/Components/Checkbox.vue';
 import DangerButton from '@/Components/DangerButton.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -8,7 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
-import type { CategoryWithFeeds } from '@/types';
+import type { CategoryWithFeeds, Feed } from '@/types';
 
 const props = defineProps<{
     categories: CategoryWithFeeds[];
@@ -25,6 +26,7 @@ const subscribeForm = useForm({
     url: '',
     title: '',
     category_id: '' as number | '',
+    summarize: false,
 });
 
 function subscribe() {
@@ -40,6 +42,14 @@ function unsubscribe(feedId: number, title: string) {
     }
 
     router.delete(route('feeds.destroy', feedId), { preserveScroll: true });
+}
+
+function toggleSummarize(feed: Feed) {
+    router.patch(
+        route('feeds.summarize', feed.id),
+        {},
+        { preserveScroll: true, preserveState: true },
+    );
 }
 
 const importForm = useForm<{ file: File | null }>({
@@ -128,6 +138,10 @@ function importOpml() {
                                 <InputError :message="subscribeForm.errors.category_id" />
                             </div>
                         </div>
+                        <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Checkbox v-model:checked="subscribeForm.summarize" />
+                            Summarize new articles with AI
+                        </label>
                         <PrimaryButton :disabled="subscribeForm.processing">
                             Subscribe
                         </PrimaryButton>
@@ -226,12 +240,23 @@ function importOpml() {
                                             Waiting for first fetch&hellip;
                                         </p>
                                     </div>
-                                    <DangerButton
-                                        type="button"
-                                        @click="unsubscribe(feed.id, feed.title)"
-                                    >
-                                        Unsubscribe
-                                    </DangerButton>
+                                    <div class="flex shrink-0 items-center gap-4">
+                                        <label
+                                            class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
+                                        >
+                                            <Checkbox
+                                                :checked="feed.summarize"
+                                                @update:checked="toggleSummarize(feed)"
+                                            />
+                                            AI summary
+                                        </label>
+                                        <DangerButton
+                                            type="button"
+                                            @click="unsubscribe(feed.id, feed.title)"
+                                        >
+                                            Unsubscribe
+                                        </DangerButton>
+                                    </div>
                                 </li>
                             </ul>
                         </div>

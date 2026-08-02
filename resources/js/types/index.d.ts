@@ -20,6 +20,7 @@ export interface Feed {
     description: string | null;
     last_fetched_at: string | null;
     last_fetch_error: string | null;
+    summarize: boolean;
 }
 
 export interface CategoryWithFeeds extends Category {
@@ -58,6 +59,8 @@ export interface Entry {
     title: string | null;
     author: string | null;
     content: string | null;
+    summary: string | null;
+    summarized_at: string | null;
     published_at: string | null;
     is_read: boolean;
     read_at: string | null;

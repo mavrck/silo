@@ -29,6 +29,7 @@ class StoreFeedRequest extends FormRequest
                 'nullable',
                 Rule::exists('categories', 'id')->where('user_id', $this->user()->id),
             ],
+            'summarize' => ['sometimes', 'boolean'],
         ];
     }
 }

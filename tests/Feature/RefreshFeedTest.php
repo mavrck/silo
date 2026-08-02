@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Jobs\RefreshFeed;
+use App\Jobs\SummarizeEntry;
 use App\Models\Feed;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\Concerns\FakesFeedIo;
 use Tests\TestCase;
 
@@ -72,5 +74,42 @@ class RefreshFeedTest extends TestCase
         $this->assertStringContainsString('<p>Safe text</p>', $entry->content);
         $this->assertStringNotContainsString('<script', $entry->content);
         $this->assertStringNotContainsString('onerror', $entry->content);
+    }
+
+    public function test_it_does_not_queue_summarization_when_the_feed_has_it_disabled(): void
+    {
+        Bus::fake([SummarizeEntry::class]);
+        $feed = Feed::factory()->create(['summarize' => false]);
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        Bus::assertNotDispatched(SummarizeEntry::class);
+    }
+
+    public function test_it_queues_summarization_for_new_entries_when_the_feed_has_it_enabled(): void
+    {
+        Bus::fake([SummarizeEntry::class]);
+        $feed = Feed::factory()->create(['summarize' => true]);
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        Bus::assertDispatchedTimes(SummarizeEntry::class, 1);
+    }
+
+    public function test_it_does_not_requeue_summarization_for_an_entry_that_already_existed(): void
+    {
+        $feed = Feed::factory()->create(['summarize' => true]);
+
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+        RefreshFeed::dispatchSync($feed);
+
+        Bus::fake([SummarizeEntry::class]);
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed-updated.xml')]);
+        RefreshFeed::dispatchSync($feed->refresh());
+
+        // Only the second (newly added) entry should be queued for summarization.
+        Bus::assertDispatchedTimes(SummarizeEntry::class, 1);
     }
 }

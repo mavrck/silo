@@ -114,6 +114,20 @@ function removeTag(tag: Tag) {
                         View original &rarr;
                     </a>
 
+                    <div
+                        v-if="entry.summary"
+                        class="mt-4 rounded-md border border-indigo-100 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-950/40"
+                    >
+                        <p
+                            class="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300"
+                        >
+                            AI summary
+                        </p>
+                        <p class="text-sm text-indigo-900 dark:text-indigo-100">
+                            {{ entry.summary }}
+                        </p>
+                    </div>
+
                     <!--
                         entry.content is sanitized server-side (Symfony HtmlSanitizer,
                         see App\Services\Feeds\ContentSanitizer) before it is ever
