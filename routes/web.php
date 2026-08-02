@@ -30,7 +30,7 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'store', 'update', 'destroy']);
 
     Route::resource('feeds', FeedController::class)
-        ->only(['index', 'store', 'destroy']);
+        ->only(['index', 'store', 'update', 'destroy']);
     Route::patch('/feeds/{feed}/summarize', [FeedController::class, 'toggleSummarize'])->name('feeds.summarize');
 
     Route::get('/opml/export', [OpmlController::class, 'export'])->name('opml.export');

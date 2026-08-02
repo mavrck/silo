@@ -147,6 +147,59 @@ class FeedTest extends TestCase
         $response->assertSessionHasErrors('url');
     }
 
+    public function test_user_can_rename_and_recategorize_their_own_feed(): void
+    {
+        $user = User::factory()->create();
+        $oldCategory = Category::factory()->for($user)->create();
+        $newCategory = Category::factory()->for($user)->create();
+        $feed = Feed::factory()->for($user)->create([
+            'category_id' => $oldCategory->id,
+            'title' => 'Old Title',
+        ]);
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feed->id}", [
+            'title' => 'New Title',
+            'category_id' => $newCategory->id,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('feeds', [
+            'id' => $feed->id,
+            'title' => 'New Title',
+            'category_id' => $newCategory->id,
+        ]);
+    }
+
+    public function test_user_cannot_move_a_feed_into_another_users_category(): void
+    {
+        $user = User::factory()->create();
+        $stranger = User::factory()->create();
+        $strangerCategory = Category::factory()->for($stranger)->create();
+        $feed = Feed::factory()->for($user)->create();
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feed->id}", [
+            'title' => 'New Title',
+            'category_id' => $strangerCategory->id,
+        ]);
+
+        $response->assertSessionHasErrors('category_id');
+    }
+
+    public function test_user_cannot_edit_another_users_feed(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create(['title' => 'Original']);
+
+        $response = $this->actingAs($intruder)->patch("/feeds/{$feed->id}", [
+            'title' => 'Hijacked',
+            'category_id' => Category::factory()->for($owner)->create()->id,
+        ]);
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('feeds', ['id' => $feed->id, 'title' => 'Original']);
+    }
+
     public function test_user_can_unsubscribe_from_their_own_feed(): void
     {
         $user = User::factory()->create();

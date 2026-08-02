@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreFeedRequest;
+use App\Http\Requests\UpdateFeedRequest;
 use App\Jobs\RefreshFeed;
 use App\Models\Feed;
 use FeedIo\FeedIo;
@@ -58,6 +59,13 @@ class FeedController extends Controller
         ]);
 
         RefreshFeed::dispatch($feed);
+
+        return back();
+    }
+
+    public function update(UpdateFeedRequest $request, Feed $feed): RedirectResponse
+    {
+        $feed->update($request->validated());
 
         return back();
     }

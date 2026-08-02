@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import DangerButton from '@/Components/DangerButton.vue';
@@ -50,6 +50,33 @@ function toggleSummarize(feed: Feed) {
         {},
         { preserveScroll: true, preserveState: true },
     );
+}
+
+const editingId = ref<number | null>(null);
+const editForm = useForm({
+    title: '',
+    category_id: '' as number | '',
+});
+
+function startEditing(feed: Feed) {
+    editingId.value = feed.id;
+    editForm.title = feed.title;
+    editForm.category_id = feed.category_id;
+}
+
+function cancelEditing() {
+    editingId.value = null;
+    editForm.reset();
+    editForm.clearErrors();
+}
+
+function saveFeed(feed: Feed) {
+    editForm.patch(route('feeds.update', feed.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            editingId.value = null;
+        },
+    });
 }
 
 const importForm = useForm<{ file: File | null }>({
@@ -212,50 +239,98 @@ function importOpml() {
                                 <li
                                     v-for="feed in category.feeds"
                                     :key="feed.id"
-                                    class="flex items-center justify-between py-3"
+                                    class="py-3"
                                 >
-                                    <div class="min-w-0">
-                                        <p
-                                            class="truncate font-medium text-gray-900 dark:text-gray-100"
-                                        >
-                                            {{ feed.title }}
-                                        </p>
-                                        <p
-                                            v-if="feed.last_fetch_error"
-                                            class="truncate text-sm text-red-600 dark:text-red-400"
-                                        >
-                                            {{ feed.last_fetch_error }}
-                                        </p>
-                                        <p
-                                            v-else-if="feed.last_fetched_at"
-                                            class="truncate text-sm text-gray-500 dark:text-gray-400"
-                                        >
-                                            Last checked
-                                            {{ new Date(feed.last_fetched_at).toLocaleString() }}
-                                        </p>
-                                        <p
-                                            v-else
-                                            class="truncate text-sm text-gray-500 dark:text-gray-400"
-                                        >
-                                            Waiting for first fetch&hellip;
-                                        </p>
-                                    </div>
-                                    <div class="flex shrink-0 items-center gap-4">
-                                        <label
-                                            class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
-                                        >
-                                            <Checkbox
-                                                :checked="feed.summarize"
-                                                @update:checked="toggleSummarize(feed)"
+                                    <form
+                                        v-if="editingId === feed.id"
+                                        @submit.prevent="saveFeed(feed)"
+                                        class="flex flex-wrap items-start gap-2"
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <TextInput
+                                                v-model="editForm.title"
+                                                class="block w-full"
+                                                autofocus
                                             />
-                                            AI summary
-                                        </label>
-                                        <DangerButton
+                                            <InputError :message="editForm.errors.title" />
+                                        </div>
+                                        <div class="w-48">
+                                            <select
+                                                v-model="editForm.category_id"
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                            >
+                                                <option
+                                                    v-for="c in categories"
+                                                    :key="c.id"
+                                                    :value="c.id"
+                                                >
+                                                    {{ c.name }}
+                                                </option>
+                                            </select>
+                                            <InputError :message="editForm.errors.category_id" />
+                                        </div>
+                                        <PrimaryButton :disabled="editForm.processing">
+                                            Save
+                                        </PrimaryButton>
+                                        <button
                                             type="button"
-                                            @click="unsubscribe(feed.id, feed.title)"
+                                            class="text-sm text-gray-500 dark:text-gray-400"
+                                            @click="cancelEditing"
                                         >
-                                            Unsubscribe
-                                        </DangerButton>
+                                            Cancel
+                                        </button>
+                                    </form>
+                                    <div v-else class="flex items-center justify-between">
+                                        <div class="min-w-0">
+                                            <p
+                                                class="truncate font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                {{ feed.title }}
+                                            </p>
+                                            <p
+                                                v-if="feed.last_fetch_error"
+                                                class="truncate text-sm text-red-600 dark:text-red-400"
+                                            >
+                                                {{ feed.last_fetch_error }}
+                                            </p>
+                                            <p
+                                                v-else-if="feed.last_fetched_at"
+                                                class="truncate text-sm text-gray-500 dark:text-gray-400"
+                                            >
+                                                Last checked
+                                                {{ new Date(feed.last_fetched_at).toLocaleString() }}
+                                            </p>
+                                            <p
+                                                v-else
+                                                class="truncate text-sm text-gray-500 dark:text-gray-400"
+                                            >
+                                                Waiting for first fetch&hellip;
+                                            </p>
+                                        </div>
+                                        <div class="flex shrink-0 items-center gap-4">
+                                            <label
+                                                class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
+                                            >
+                                                <Checkbox
+                                                    :checked="feed.summarize"
+                                                    @update:checked="toggleSummarize(feed)"
+                                                />
+                                                AI summary
+                                            </label>
+                                            <button
+                                                type="button"
+                                                class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                                @click="startEditing(feed)"
+                                            >
+                                                Edit
+                                            </button>
+                                            <DangerButton
+                                                type="button"
+                                                @click="unsubscribe(feed.id, feed.title)"
+                                            >
+                                                Unsubscribe
+                                            </DangerButton>
+                                        </div>
                                     </div>
                                 </li>
                             </ul>
