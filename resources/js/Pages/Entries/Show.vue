@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import type { Entry } from '@/types';
+import TextInput from '@/Components/TextInput.vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import type { Entry, Tag } from '@/types';
 
 const props = defineProps<{
     entry: Entry;
@@ -26,6 +28,28 @@ function formatDate(value: string | null): string {
     return new Date(value).toLocaleString(undefined, {
         dateStyle: 'medium',
         timeStyle: 'short',
+    });
+}
+
+// Tags
+const newTagName = ref('');
+const tagForm = useForm({ name: '' });
+
+function addTag() {
+    if (!newTagName.value.trim()) return;
+
+    tagForm.name = newTagName.value.trim();
+    tagForm.post(route('entries.tags.attach', props.entry.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            newTagName.value = '';
+        },
+    });
+}
+
+function removeTag(tag: Tag) {
+    router.delete(route('entries.tags.detach', [props.entry.id, tag.id]), {
+        preserveScroll: true,
     });
 }
 </script>
@@ -99,6 +123,33 @@ function formatDate(value: string | null): string {
                         class="prose prose-sm mt-6 max-w-none dark:prose-invert"
                         v-html="entry.content"
                     />
+
+                    <div class="mt-8 border-t border-gray-200 pt-4 dark:border-gray-700">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span
+                                v-for="tag in entry.tags"
+                                :key="tag.id"
+                                class="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                            >
+                                #{{ tag.name }}
+                                <button
+                                    type="button"
+                                    class="text-gray-400 hover:text-red-500"
+                                    :aria-label="`Remove tag ${tag.name}`"
+                                    @click="removeTag(tag)"
+                                >
+                                    &times;
+                                </button>
+                            </span>
+                            <form @submit.prevent="addTag" class="inline-flex items-center gap-1">
+                                <TextInput
+                                    v-model="newTagName"
+                                    placeholder="Add tag"
+                                    class="!py-1 text-xs"
+                                />
+                            </form>
+                        </div>
+                    </div>
                 </article>
             </div>
         </div>

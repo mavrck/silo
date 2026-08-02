@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Entry extends Model
 {
@@ -37,6 +38,11 @@ class Entry extends Model
         return $this->belongsTo(Feed::class);
     }
 
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class);
+    }
+
     public function scopeUnread(Builder $query): Builder
     {
         return $query->where('is_read', false);
@@ -45,6 +51,11 @@ class Entry extends Model
     public function scopeStarred(Builder $query): Builder
     {
         return $query->where('is_starred', true);
+    }
+
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        return $query->whereFullText(['title', 'content'], $term);
     }
 
     public function markRead(): void

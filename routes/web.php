@@ -5,6 +5,8 @@ use App\Http\Controllers\EntryController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\OpmlController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavedSearchController;
+use App\Http\Controllers\TagController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -41,6 +43,15 @@ Route::middleware('auth')->group(function () {
     Route::patch('/entries/{entry}/read', [EntryController::class, 'markRead'])->name('entries.read');
     Route::patch('/entries/{entry}/unread', [EntryController::class, 'markUnread'])->name('entries.unread');
     Route::patch('/entries/{entry}/star', [EntryController::class, 'toggleStar'])->name('entries.star');
+    Route::post('/entries/{entry}/tags', [EntryController::class, 'attachTag'])->name('entries.tags.attach');
+    Route::delete('/entries/{entry}/tags/{tag}', [EntryController::class, 'detachTag'])->name('entries.tags.detach');
+
+    Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
+    Route::patch('/tags/{tag}', [TagController::class, 'update'])->name('tags.update');
+    Route::delete('/tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
+
+    Route::post('/saved-searches', [SavedSearchController::class, 'store'])->name('saved-searches.store');
+    Route::delete('/saved-searches/{savedSearch}', [SavedSearchController::class, 'destroy'])->name('saved-searches.destroy');
 });
 
 require __DIR__.'/auth.php';

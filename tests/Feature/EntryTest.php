@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Entry;
 use App\Models\Feed;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -88,6 +89,23 @@ class EntryTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->has('entries.data', 1)
             ->where('entries.data.0.id', $entryA->id)
+        );
+    }
+
+    public function test_index_can_filter_by_tag(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        $tag = Tag::factory()->for($user)->create();
+        $tagged = Entry::factory()->for($feed)->create();
+        $tagged->tags()->attach($tag);
+        Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($user)->get("/entries?tag_id={$tag->id}");
+
+        $response->assertInertia(fn ($page) => $page
+            ->has('entries.data', 1)
+            ->where('entries.data.0.id', $tagged->id)
         );
     }
 

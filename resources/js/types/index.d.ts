@@ -41,6 +41,15 @@ export interface EntryFeed {
     site_url?: string | null;
 }
 
+export interface Tag {
+    id: number;
+    name: string;
+}
+
+export interface TagWithCount extends Tag {
+    entries_count: number;
+}
+
 export interface Entry {
     id: number;
     feed_id: number;
@@ -54,6 +63,22 @@ export interface Entry {
     read_at: string | null;
     is_starred: boolean;
     feed?: EntryFeed;
+    tags?: Tag[];
+}
+
+export interface SavedSearchFilters {
+    q?: string;
+    feed_id?: number;
+    category_id?: number;
+    tag_id?: number;
+    unread?: boolean;
+    starred?: boolean;
+}
+
+export interface SavedSearch {
+    id: number;
+    name: string;
+    filters: SavedSearchFilters;
 }
 
 export interface Paginated<T> {
@@ -67,6 +92,8 @@ export interface Paginated<T> {
 export interface EntryFilters {
     feed_id?: string;
     category_id?: string;
+    tag_id?: string;
+    q?: string;
     unread?: string;
     starred?: string;
 }
