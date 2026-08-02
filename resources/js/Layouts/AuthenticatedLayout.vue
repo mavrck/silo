@@ -40,6 +40,12 @@ const showingNavigationDropdown = ref(false);
                                     Dashboard
                                 </NavLink>
                                 <NavLink
+                                    :href="route('feeds.index')"
+                                    :active="route().current('feeds.*')"
+                                >
+                                    Feeds
+                                </NavLink>
+                                <NavLink
                                     :href="route('categories.index')"
                                     :active="route().current('categories.*')"
                                 >
@@ -151,6 +157,12 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('dashboard')"
                         >
                             Dashboard
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('feeds.index')"
+                            :active="route().current('feeds.*')"
+                        >
+                            Feeds
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             :href="route('categories.index')"

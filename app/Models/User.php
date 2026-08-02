@@ -35,4 +35,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Category::class);
     }
+
+    public function feeds(): HasMany
+    {
+        return $this->hasMany(Feed::class);
+    }
 }

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+    <channel>
+        <title>Example Feed</title>
+        <description>An example feed for tests</description>
+        <link>https://example.test</link>
+        <item>
+            <title>First post</title>
+            <description>The first post's content.</description>
+            <link>https://example.test/first-post</link>
+            <guid>https://example.test/first-post</guid>
+            <pubDate>Mon, 06 Jan 2026 09:00:00 GMT</pubDate>
+            <author>Ada Lovelace</author>
+        </item>
+        <item>
+            <title>Second post</title>
+            <description>The second post's content.</description>
+            <link>https://example.test/second-post</link>
+            <guid>https://example.test/second-post</guid>
+            <pubDate>Tue, 07 Jan 2026 09:00:00 GMT</pubDate>
+            <author>Ada Lovelace</author>
+        </item>
+    </channel>
+</rss>
