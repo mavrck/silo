@@ -91,6 +91,13 @@ export interface SavedSearch {
     filters: SavedSearchFilters;
 }
 
+export interface ApiToken {
+    id: number;
+    name: string;
+    last_used_at: string | null;
+    created_at: string;
+}
+
 export interface Paginated<T> {
     data: T[];
     links: { url: string | null; label: string; active: boolean }[];
