@@ -5,11 +5,19 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\PersonalAccessToken;
+use Spectator\Spectator;
 use Tests\TestCase;
 
 class ApiTokenTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Spectator::using('openapi.yaml');
+    }
 
     public function test_user_can_create_an_api_token(): void
     {
@@ -116,6 +124,8 @@ class ApiTokenTest extends TestCase
     {
         $response = $this->getJson('/api/user');
 
+        $response->assertValidRequest();
+        $response->assertValidResponse(401);
         $response->assertUnauthorized();
     }
 
@@ -128,11 +138,18 @@ class ApiTokenTest extends TestCase
             ->withHeader('Authorization', 'Bearer '.$token->plainTextToken)
             ->getJson('/api/user');
 
+        $response->assertValidRequest();
+        $response->assertValidResponse(200);
         $response->assertOk();
         $response->assertJson([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
+            'data' => [
+                'type' => 'users',
+                'id' => (string) $user->id,
+                'attributes' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ],
+            ],
         ]);
     }
 
@@ -146,6 +163,8 @@ class ApiTokenTest extends TestCase
             ->withHeader('Authorization', 'Bearer '.$token->plainTextToken)
             ->getJson('/api/user');
 
+        $response->assertValidRequest();
+        $response->assertValidResponse(401);
         $response->assertUnauthorized();
     }
 }

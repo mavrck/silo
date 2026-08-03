@@ -1,0 +1,622 @@
+openapi: 3.0.3
+info:
+  title: Silo API
+  description: >
+    Read-only JSON:API surface for Silo, a self-hosted RSS/Atom/podcast
+    reader. Authenticate with a personal access token created from the
+    profile page, sent as a Bearer token.
+  version: "1.0.0"
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+tags:
+  - name: Feeds
+  - name: Entries
+  - name: Categories
+  - name: Tags
+  - name: User
+
+paths:
+  /user:
+    get:
+      tags: [User]
+      summary: Get the authenticated user
+      operationId: getUser
+      responses:
+        "200":
+          description: The authenticated user
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/UserDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /feeds:
+    get:
+      tags: [Feeds]
+      summary: List the authenticated user's feeds
+      operationId: listFeeds
+      responses:
+        "200":
+          description: A collection of feeds
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/FeedCollectionDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /feeds/{feed}:
+    get:
+      tags: [Feeds]
+      summary: Get a single feed
+      operationId: getFeed
+      parameters:
+        - $ref: "#/components/parameters/FeedId"
+      responses:
+        "200":
+          description: A single feed, with its category included
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/FeedDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /entries:
+    get:
+      tags: [Entries]
+      summary: List the authenticated user's entries
+      description: >
+        Returns entries across all of the user's feeds, newest first,
+        paginated 25 per page. Supports filtering by feed, category, tag,
+        read/starred state, and full-text search.
+      operationId: listEntries
+      parameters:
+        - $ref: "#/components/parameters/FeedIdFilter"
+        - $ref: "#/components/parameters/CategoryIdFilter"
+        - $ref: "#/components/parameters/TagIdFilter"
+        - $ref: "#/components/parameters/QueryFilter"
+        - $ref: "#/components/parameters/UnreadFilter"
+        - $ref: "#/components/parameters/StarredFilter"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: A paginated collection of entries
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/EntryCollectionDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /entries/{entry}:
+    get:
+      tags: [Entries]
+      summary: Get a single entry
+      operationId: getEntry
+      parameters:
+        - $ref: "#/components/parameters/EntryId"
+      responses:
+        "200":
+          description: A single entry, with its feed and tags included
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/EntryDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: List the authenticated user's categories
+      operationId: listCategories
+      responses:
+        "200":
+          description: A collection of categories
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/CategoryCollectionDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /categories/{category}:
+    get:
+      tags: [Categories]
+      summary: Get a single category
+      operationId: getCategory
+      parameters:
+        - $ref: "#/components/parameters/CategoryId"
+      responses:
+        "200":
+          description: A single category
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/CategoryDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /tags:
+    get:
+      tags: [Tags]
+      summary: List the authenticated user's tags
+      operationId: listTags
+      responses:
+        "200":
+          description: A collection of tags
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/TagCollectionDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /tags/{tag}:
+    get:
+      tags: [Tags]
+      summary: Get a single tag
+      operationId: getTag
+      parameters:
+        - $ref: "#/components/parameters/TagId"
+      responses:
+        "200":
+          description: A single tag
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: "#/components/schemas/TagDocument"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: A personal access token created from the profile page (Sanctum).
+
+  parameters:
+    FeedId:
+      name: feed
+      in: path
+      required: true
+      schema:
+        type: integer
+    EntryId:
+      name: entry
+      in: path
+      required: true
+      schema:
+        type: integer
+    CategoryId:
+      name: category
+      in: path
+      required: true
+      schema:
+        type: integer
+    TagId:
+      name: tag
+      in: path
+      required: true
+      schema:
+        type: integer
+    FeedIdFilter:
+      name: feed_id
+      in: query
+      description: Only return entries belonging to this feed.
+      schema:
+        type: integer
+    CategoryIdFilter:
+      name: category_id
+      in: query
+      description: Only return entries whose feed belongs to this category.
+      schema:
+        type: integer
+    TagIdFilter:
+      name: tag_id
+      in: query
+      description: Only return entries tagged with this tag.
+      schema:
+        type: integer
+    QueryFilter:
+      name: q
+      in: query
+      description: Full-text search across entry title and content.
+      schema:
+        type: string
+    UnreadFilter:
+      name: unread
+      in: query
+      description: Only return unread entries.
+      schema:
+        type: boolean
+    StarredFilter:
+      name: starred
+      in: query
+      description: Only return starred entries.
+      schema:
+        type: boolean
+    Page:
+      name: page
+      in: query
+      description: Page number.
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDocument"
+    Forbidden:
+      description: The token does not grant access to this resource
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDocument"
+    NotFound:
+      description: The resource does not exist
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: "#/components/schemas/ErrorDocument"
+
+  schemas:
+    ResourceIdentifier:
+      type: object
+      required: [type, id]
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+
+    PaginationLinks:
+      type: object
+      properties:
+        first:
+          type: string
+          nullable: true
+        last:
+          type: string
+          nullable: true
+        prev:
+          type: string
+          nullable: true
+        next:
+          type: string
+          nullable: true
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        from:
+          type: integer
+          nullable: true
+        last_page:
+          type: integer
+        path:
+          type: string
+        per_page:
+          type: integer
+        to:
+          type: integer
+          nullable: true
+        total:
+          type: integer
+
+    ErrorObject:
+      type: object
+      properties:
+        status:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        source:
+          type: object
+          properties:
+            pointer:
+              type: string
+
+    ErrorDocument:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorObject"
+
+    UserResource:
+      type: object
+      required: [type, id, attributes]
+      properties:
+        type:
+          type: string
+          enum: [users]
+        id:
+          type: string
+        attributes:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+
+    UserDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/UserResource"
+
+    CategoryResource:
+      type: object
+      required: [type, id, attributes]
+      properties:
+        type:
+          type: string
+          enum: [categories]
+        id:
+          type: string
+        attributes:
+          type: object
+          properties:
+            name:
+              type: string
+            position:
+              type: integer
+
+    CategoryDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/CategoryResource"
+
+    CategoryCollectionDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryResource"
+
+    TagResource:
+      type: object
+      required: [type, id, attributes]
+      properties:
+        type:
+          type: string
+          enum: [tags]
+        id:
+          type: string
+        attributes:
+          type: object
+          properties:
+            name:
+              type: string
+            entries_count:
+              type: integer
+              nullable: true
+
+    TagDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/TagResource"
+
+    TagCollectionDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagResource"
+
+    FeedResource:
+      type: object
+      required: [type, id, attributes, relationships]
+      properties:
+        type:
+          type: string
+          enum: [feeds]
+        id:
+          type: string
+        attributes:
+          type: object
+          properties:
+            title:
+              type: string
+            url:
+              type: string
+              format: uri
+            site_url:
+              type: string
+              format: uri
+              nullable: true
+            description:
+              type: string
+              nullable: true
+            last_fetched_at:
+              type: string
+              format: date-time
+              nullable: true
+            last_fetch_error:
+              type: string
+              nullable: true
+            summarize:
+              type: boolean
+              nullable: true
+        relationships:
+          type: object
+          properties:
+            category:
+              type: object
+              properties:
+                data:
+                  $ref: "#/components/schemas/ResourceIdentifier"
+
+    FeedDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/FeedResource"
+        included:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryResource"
+
+    FeedCollectionDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeedResource"
+
+    EntryResource:
+      type: object
+      required: [type, id, attributes, relationships]
+      properties:
+        type:
+          type: string
+          enum: [entries]
+        id:
+          type: string
+        attributes:
+          type: object
+          properties:
+            guid:
+              type: string
+            url:
+              type: string
+              format: uri
+              nullable: true
+            title:
+              type: string
+              nullable: true
+            author:
+              type: string
+              nullable: true
+            content:
+              type: string
+              nullable: true
+            summary:
+              type: string
+              nullable: true
+            summarized_at:
+              type: string
+              format: date-time
+              nullable: true
+            published_at:
+              type: string
+              format: date-time
+              nullable: true
+            is_read:
+              type: boolean
+            read_at:
+              type: string
+              format: date-time
+              nullable: true
+            is_starred:
+              type: boolean
+            enclosure_url:
+              type: string
+              format: uri
+              nullable: true
+            enclosure_type:
+              type: string
+              nullable: true
+            enclosure_length:
+              type: integer
+              nullable: true
+            duration_seconds:
+              type: integer
+              nullable: true
+            episode_number:
+              type: integer
+              nullable: true
+            season_number:
+              type: integer
+              nullable: true
+            image_url:
+              type: string
+              format: uri
+              nullable: true
+        relationships:
+          type: object
+          properties:
+            feed:
+              type: object
+              properties:
+                data:
+                  $ref: "#/components/schemas/ResourceIdentifier"
+            tags:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ResourceIdentifier"
+
+    EntryDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/EntryResource"
+        included:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/FeedResource"
+              - $ref: "#/components/schemas/TagResource"
+
+    EntryCollectionDocument:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryResource"
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"

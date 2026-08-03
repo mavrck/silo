@@ -12,6 +12,11 @@ class TagPolicy
         return true;
     }
 
+    public function view(User $user, Tag $tag): bool
+    {
+        return $user->id === $tag->user_id;
+    }
+
     public function create(User $user): bool
     {
         return true;
