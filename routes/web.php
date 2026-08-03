@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DigestPreferenceController;
 use App\Http\Controllers\EntryController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\OpmlController;
@@ -30,6 +31,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/api-tokens', [ApiTokenController::class, 'store'])->name('api-tokens.store');
     Route::post('/profile/api-tokens/{token}/regenerate', [ApiTokenController::class, 'regenerate'])->name('api-tokens.regenerate');
     Route::delete('/profile/api-tokens/{token}', [ApiTokenController::class, 'destroy'])->name('api-tokens.destroy');
+
+    Route::patch('/profile/digest', [DigestPreferenceController::class, 'update'])->name('digest-preference.update');
 
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy']);

@@ -25,6 +25,7 @@ class ProfileController extends Controller
                 ->orderByDesc('created_at')
                 ->get(['id', 'name', 'last_used_at', 'created_at']),
             'newToken' => session('token'),
+            'digestFrequency' => $request->user()->digest_frequency,
         ]);
     }
 
