@@ -19,8 +19,12 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): Response
+    public function create(): Response|RedirectResponse
     {
+        if (! config('app.registrations_enabled')) {
+            return redirect()->route('login')->with('status', 'Registration is currently closed.');
+        }
+
         return Inertia::render('Auth/Register');
     }
 
@@ -31,6 +35,10 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if (! config('app.registrations_enabled')) {
+            return redirect()->route('login')->with('status', 'Registration is currently closed.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,

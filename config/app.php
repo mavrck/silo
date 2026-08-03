@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Registrations
+    |--------------------------------------------------------------------------
+    |
+    | Controls whether new users can self-register. Off by default — a
+    | self-hosted instance is typically provisioned for a known set of
+    | people, not open signup.
+    |
+    */
+
+    'registrations_enabled' => (bool) env('REGISTRATIONS_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
