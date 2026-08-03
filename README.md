@@ -52,6 +52,19 @@ ANTHROPIC_API_KEY=
 
 See `config/ai.php` for the full list of supported providers.
 
+### Email
+
+Password resets and other transactional mail default to the `log` driver locally, so they work without any external account. To send real mail through [Resend](https://resend.com):
+
+```
+MAIL_MAILER=resend
+RESEND_API_KEY=
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+`RESEND_API_KEY` maps to `services.resend.key` — see `config/services.php` and `config/mail.php`.
+
 ## Running tests
 
 ```bash
