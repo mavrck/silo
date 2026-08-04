@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'enabled' => (bool) env('TRANSLATION_ENABLED', true),
+    'enabled' => (bool) env('TRANSLATION_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------
