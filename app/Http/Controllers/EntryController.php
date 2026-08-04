@@ -124,7 +124,10 @@ class EntryController extends Controller
         Gate::authorize('update', $entry);
         $entry->markUnread();
 
-        return back();
+        // Not back() — if this was triggered from the entry's own show page,
+        // back() would redirect right back to show(), which unconditionally
+        // marks the entry read again on view, instantly undoing this action.
+        return redirect()->route('entries.index');
     }
 
     public function toggleStar(Entry $entry): RedirectResponse

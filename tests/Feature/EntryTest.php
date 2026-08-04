@@ -135,6 +135,27 @@ class EntryTest extends TestCase
         $this->assertNull($entry->fresh()->read_at);
     }
 
+    public function test_marking_unread_from_the_show_page_survives_the_redirect(): void
+    {
+        // Regression test: markUnread() used to redirect back(), which sent
+        // the user right back to the entry's own show page — and show()
+        // unconditionally marks the entry read on view, instantly undoing
+        // the unread action. This reproduces the full browser round trip.
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        $entry = Entry::factory()->for($feed)->create();
+
+        $this->actingAs($user)->get("/entries/{$entry->id}");
+        $this->assertTrue($entry->fresh()->is_read);
+
+        $response = $this->actingAs($user)->patch("/entries/{$entry->id}/unread");
+        $response->assertRedirect(route('entries.index'));
+
+        $this->actingAs($user)->get($response->headers->get('Location'));
+
+        $this->assertFalse($entry->fresh()->is_read);
+    }
+
     public function test_user_can_toggle_star_on_an_entry(): void
     {
         $user = User::factory()->create();
