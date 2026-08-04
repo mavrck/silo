@@ -5,7 +5,7 @@ import DangerButton from '@/Components/DangerButton.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { formatDuration } from '@/utils/duration';
 import type {
     CategoryWithFeedCounts,
@@ -22,7 +22,11 @@ const props = defineProps<{
     tags: Tag[];
     savedSearches: SavedSearch[];
     filters: EntryFilters;
+    unreadCount: number;
 }>();
+
+const page = usePage();
+const flashStatus = computed(() => page.props.flash.status);
 
 const totalUnread = computed(() =>
     props.sidebar.reduce(
@@ -60,6 +64,19 @@ function toggleStar(entry: Entry) {
         {},
         { preserveState: true, preserveScroll: true },
     );
+}
+
+function markAllRead() {
+    const noun = props.unreadCount === 1 ? 'entry' : 'entries';
+
+    if (!confirm(`Mark ${props.unreadCount} ${noun} as read?`)) {
+        return;
+    }
+
+    router.patch(route('entries.mark-all-read'), { ...props.filters }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
 }
 
 function formatDate(value: string | null): string {
@@ -155,6 +172,13 @@ function submitSaveForm() {
 
         <div class="py-12">
             <div class="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 sm:px-6 md:grid-cols-[220px_1fr] lg:px-8">
+                <div
+                    v-if="flashStatus"
+                    class="rounded-lg bg-green-50 p-4 text-sm text-green-800 md:col-span-2 dark:bg-green-900/50 dark:text-green-200"
+                >
+                    {{ flashStatus }}
+                </div>
+
                 <!-- Sidebar -->
                 <aside
                     class="h-fit overflow-hidden rounded-lg bg-white p-4 shadow-sm dark:bg-gray-800"
@@ -300,6 +324,12 @@ function submitSaveForm() {
                                     class="block w-full"
                                 />
                             </form>
+                            <SecondaryButton
+                                v-if="unreadCount > 0"
+                                @click="markAllRead"
+                            >
+                                Mark all as read
+                            </SecondaryButton>
                             <SecondaryButton
                                 v-if="activeFilterCount"
                                 @click="openSaveForm"

@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/opml/import', [OpmlController::class, 'import'])->name('opml.import');
 
     Route::get('/entries', [EntryController::class, 'index'])->name('entries.index');
+    Route::patch('/entries/mark-all-read', [EntryController::class, 'markAllRead'])->name('entries.mark-all-read');
     Route::get('/entries/{entry}', [EntryController::class, 'show'])->name('entries.show');
     Route::patch('/entries/{entry}/read', [EntryController::class, 'markRead'])->name('entries.read');
     Route::patch('/entries/{entry}/unread', [EntryController::class, 'markUnread'])->name('entries.unread');

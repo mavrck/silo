@@ -179,4 +179,91 @@ class EntryTest extends TestCase
 
         $response->assertRedirect('/login');
     }
+
+    public function test_index_reports_the_unread_count_for_the_current_filters(): void
+    {
+        $user = User::factory()->create();
+        $feedA = Feed::factory()->for($user)->create();
+        $feedB = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feedA)->create();
+        Entry::factory()->for($feedA)->read()->create();
+        Entry::factory()->for($feedB)->create();
+
+        $response = $this->actingAs($user)->get("/entries?feed_id={$feedA->id}");
+
+        $response->assertInertia(fn ($page) => $page->where('unreadCount', 1));
+    }
+
+    public function test_mark_all_read_marks_unread_entries_matching_the_current_filters(): void
+    {
+        $user = User::factory()->create();
+        $feedA = Feed::factory()->for($user)->create();
+        $feedB = Feed::factory()->for($user)->create();
+        $unreadInFeedA = Entry::factory()->for($feedA)->create();
+        $alreadyReadInFeedA = Entry::factory()->for($feedA)->read()->create();
+        $unreadInFeedB = Entry::factory()->for($feedB)->create();
+
+        $response = $this->actingAs($user)->patch('/entries/mark-all-read', ['feed_id' => $feedA->id]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('status', 'Marked 1 entry as read.');
+        $this->assertTrue($unreadInFeedA->fresh()->is_read);
+        $this->assertNotNull($unreadInFeedA->fresh()->read_at);
+        $this->assertNotNull($alreadyReadInFeedA->fresh()->read_at);
+        $this->assertFalse($unreadInFeedB->fresh()->is_read);
+    }
+
+    public function test_mark_all_read_respects_category_tag_and_starred_filters(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->for($user)->create();
+        $feed = Feed::factory()->for($user)->create(['category_id' => $category->id]);
+        $tag = Tag::factory()->for($user)->create();
+
+        $matches = Entry::factory()->for($feed)->create();
+        $matches->tags()->attach($tag);
+        $matches->toggleStarred();
+
+        $wrongTag = Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($user)->patch('/entries/mark-all-read', [
+            'category_id' => $category->id,
+            'tag_id' => $tag->id,
+            'starred' => 1,
+        ]);
+
+        $response->assertSessionHas('status', 'Marked 1 entry as read.');
+        $this->assertTrue($matches->fresh()->is_read);
+        $this->assertFalse($wrongTag->fresh()->is_read);
+    }
+
+    public function test_mark_all_read_only_affects_the_authenticated_users_entries(): void
+    {
+        $user = User::factory()->create();
+        $stranger = User::factory()->create();
+        $strangerFeed = Feed::factory()->for($stranger)->create();
+        $strangerEntry = Entry::factory()->for($strangerFeed)->create();
+
+        $this->actingAs($user)->patch('/entries/mark-all-read');
+
+        $this->assertFalse($strangerEntry->fresh()->is_read);
+    }
+
+    public function test_mark_all_read_flashes_a_message_when_there_is_nothing_to_mark(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->read()->create();
+
+        $response = $this->actingAs($user)->patch('/entries/mark-all-read');
+
+        $response->assertSessionHas('status', 'No unread entries to mark as read.');
+    }
+
+    public function test_guests_cannot_mark_all_read(): void
+    {
+        $response = $this->patch('/entries/mark-all-read');
+
+        $response->assertRedirect('/login');
+    }
 }
