@@ -11,7 +11,7 @@ from {{ $frequency === 'weekly' ? 'the last week' : 'the last day' }}.
 **{{ $feedName }}**
 
 @foreach ($entries as $entry)
-- [{{ $entry->title ?: 'Untitled' }}]({{ url('/entries/'.$entry->id) }})
+- [{{ $entry->title ?: 'Untitled' }}]({{ url('/entries/'.$entry->id) }}){!! $entry->summary ? '<br><span style="color:#71717a;font-size:13px;">'.e(Str::limit($entry->summary, 200)).'</span>' : '' !!}
 @endforeach
 
 @endforeach

@@ -80,4 +80,65 @@ class SendDigestEmailTest extends TestCase
 
         Mail::assertNothingSent();
     }
+
+    public function test_the_digest_includes_an_entrys_summary(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create([
+            'published_at' => now(),
+            'summary' => 'A concise take on the news.',
+        ]);
+
+        SendDigestEmail::dispatchSync($user, 'daily');
+
+        Mail::assertSent(DigestMail::class, function (DigestMail $mail) {
+            $mail->assertSeeInHtml('A concise take on the news.');
+            $mail->assertSeeInText('A concise take on the news.');
+
+            return true;
+        });
+    }
+
+    public function test_the_digest_truncates_a_long_summary(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create([
+            'published_at' => now(),
+            'summary' => str_repeat('word ', 100),
+        ]);
+
+        SendDigestEmail::dispatchSync($user, 'daily');
+
+        Mail::assertSent(DigestMail::class, function (DigestMail $mail) {
+            $mail->assertDontSeeInHtml(str_repeat('word ', 100));
+
+            return true;
+        });
+    }
+
+    public function test_the_digest_renders_cleanly_when_an_entry_has_no_summary(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create([
+            'title' => 'No summary here',
+            'published_at' => now(),
+        ]);
+
+        SendDigestEmail::dispatchSync($user, 'daily');
+
+        Mail::assertSent(DigestMail::class, function (DigestMail $mail) {
+            $mail->assertSeeInHtml('No summary here');
+
+            return true;
+        });
+    }
 }
