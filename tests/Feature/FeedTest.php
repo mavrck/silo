@@ -184,6 +184,52 @@ class FeedTest extends TestCase
         $this->assertNull($feed->fresh()->translate_to);
     }
 
+    public function test_subscribing_with_a_target_language_fails_when_translation_is_globally_disabled(): void
+    {
+        config(['translation.enabled' => false]);
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'translate_to' => 'es',
+        ]);
+
+        $response->assertSessionHasErrors('translate_to');
+        $this->assertDatabaseCount('feeds', 0);
+    }
+
+    public function test_subscribing_without_a_target_language_still_works_when_translation_is_globally_disabled(): void
+    {
+        config(['translation.enabled' => false]);
+        Bus::fake();
+        $user = User::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        $response = $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'translate_to' => null,
+        ]);
+    }
+
+    public function test_user_cannot_set_a_target_language_when_translation_is_globally_disabled(): void
+    {
+        config(['translation.enabled' => false]);
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create(['translate_to' => null]);
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feed->id}/translate", [
+            'translate_to' => 'fr',
+        ]);
+
+        $response->assertSessionHasErrors('translate_to');
+        $this->assertNull($feed->fresh()->translate_to);
+    }
+
     public function test_subscribing_without_a_category_creates_an_uncategorized_one(): void
     {
         Bus::fake();

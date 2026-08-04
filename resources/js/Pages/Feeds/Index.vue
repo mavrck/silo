@@ -14,6 +14,7 @@ import type { CategoryWithFeeds, Feed } from '@/types';
 const props = defineProps<{
     categories: CategoryWithFeeds[];
     languages: Record<string, string>;
+    translationEnabled: boolean;
 }>();
 
 const page = usePage();
@@ -179,7 +180,7 @@ function importOpml() {
                             <Checkbox v-model:checked="subscribeForm.summarize" />
                             Summarize new articles with AI
                         </label>
-                        <div class="flex items-center gap-2">
+                        <div v-if="translationEnabled" class="flex items-center gap-2">
                             <label
                                 for="subscribe-translate-to"
                                 class="text-sm text-gray-600 dark:text-gray-400"
@@ -351,6 +352,7 @@ function importOpml() {
                                                 AI summary
                                             </label>
                                             <select
+                                                v-if="translationEnabled"
                                                 :value="feed.translate_to ?? ''"
                                                 class="rounded-md border-gray-300 py-1 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                                                 @change="

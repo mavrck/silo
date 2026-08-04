@@ -84,4 +84,22 @@ class TranslateEntryTest extends TestCase
         $this->assertNull($entry->translated_language);
         $this->assertNull($entry->translated_at);
     }
+
+    public function test_it_does_not_prompt_when_translation_is_globally_disabled(): void
+    {
+        config(['translation.enabled' => false]);
+        TranslateAgent::fake(['should not be used']);
+
+        $feed = Feed::factory()->create(['translate_to' => 'es']);
+        $entry = Entry::factory()->for($feed)->create([
+            'content' => '<p>Some article content.</p>',
+        ]);
+
+        TranslateEntry::dispatchSync($entry);
+
+        $entry->refresh();
+        $this->assertNull($entry->translated_title);
+        $this->assertNull($entry->translated_content);
+        TranslateAgent::assertNeverPrompted();
+    }
 }

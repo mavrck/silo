@@ -89,7 +89,7 @@ class RefreshFeed implements ShouldQueue
                 SummarizeEntry::dispatch($entry);
             }
 
-            if ($this->feed->translate_to) {
+            if ($this->feed->translate_to && config('translation.enabled')) {
                 TranslateEntry::dispatch($entry);
             }
         }

@@ -4,6 +4,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Translation Enabled
+    |--------------------------------------------------------------------------
+    |
+    | A global kill switch for per-feed AI translation, independent of any
+    | individual feed's setting. Turning this off stops new translation
+    | API calls from being dispatched and prevents setting a target
+    | language on a feed, without touching translations already stored.
+    |
+    */
+
+    'enabled' => (bool) env('TRANSLATION_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Supported Translation Languages
     |--------------------------------------------------------------------------
     |

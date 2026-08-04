@@ -207,4 +207,16 @@ class RefreshFeedTest extends TestCase
         // Only the second (newly added) entry should be queued for translation.
         Bus::assertDispatchedTimes(TranslateEntry::class, 1);
     }
+
+    public function test_it_does_not_queue_translation_when_translation_is_globally_disabled(): void
+    {
+        config(['translation.enabled' => false]);
+        Bus::fake([TranslateEntry::class]);
+        $feed = Feed::factory()->create(['translate_to' => 'es']);
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        Bus::assertNotDispatched(TranslateEntry::class);
+    }
 }

@@ -30,6 +30,7 @@ class FeedController extends Controller
         return Inertia::render('Feeds/Index', [
             'categories' => $categories,
             'languages' => config('translation.languages'),
+            'translationEnabled' => config('translation.enabled'),
         ]);
     }
 
@@ -97,7 +98,9 @@ class FeedController extends Controller
         Gate::authorize('update', $feed);
 
         $feed->update($request->validate([
-            'translate_to' => ['nullable', 'string', Rule::in(array_keys(config('translation.languages')))],
+            'translate_to' => config('translation.enabled')
+                ? ['nullable', 'string', Rule::in(array_keys(config('translation.languages')))]
+                : ['prohibited'],
         ]));
 
         return back();

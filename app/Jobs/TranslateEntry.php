@@ -28,7 +28,7 @@ class TranslateEntry implements ShouldQueue
     {
         $languageCode = $this->entry->feed->translate_to;
 
-        if (! $languageCode) {
+        if (! $languageCode || ! config('translation.enabled')) {
             return;
         }
 
