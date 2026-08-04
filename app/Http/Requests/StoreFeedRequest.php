@@ -30,6 +30,7 @@ class StoreFeedRequest extends FormRequest
                 Rule::exists('categories', 'id')->where('user_id', $this->user()->id),
             ],
             'summarize' => ['sometimes', 'boolean'],
+            'translate_to' => ['nullable', 'string', Rule::in(array_keys(config('translation.languages')))],
         ];
     }
 }

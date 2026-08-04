@@ -8,7 +8,9 @@ use App\Jobs\RefreshFeed;
 use App\Models\Feed;
 use FeedIo\FeedIo;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,6 +29,7 @@ class FeedController extends Controller
 
         return Inertia::render('Feeds/Index', [
             'categories' => $categories,
+            'languages' => config('translation.languages'),
         ]);
     }
 
@@ -56,6 +59,7 @@ class FeedController extends Controller
             'site_url' => $feedData->getLink(),
             'description' => $feedData->getDescription(),
             'summarize' => $data['summarize'] ?? false,
+            'translate_to' => $data['translate_to'] ?? null,
         ]);
 
         RefreshFeed::dispatch($feed);
@@ -84,6 +88,17 @@ class FeedController extends Controller
         Gate::authorize('update', $feed);
 
         $feed->update(['summarize' => ! $feed->summarize]);
+
+        return back();
+    }
+
+    public function updateTranslation(Request $request, Feed $feed): RedirectResponse
+    {
+        Gate::authorize('update', $feed);
+
+        $feed->update($request->validate([
+            'translate_to' => ['nullable', 'string', Rule::in(array_keys(config('translation.languages')))],
+        ]));
 
         return back();
     }

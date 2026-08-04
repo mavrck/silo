@@ -84,8 +84,14 @@ class RefreshFeed implements ShouldQueue
             ]
         );
 
-        if ($entry->wasRecentlyCreated && $this->feed->summarize) {
-            SummarizeEntry::dispatch($entry);
+        if ($entry->wasRecentlyCreated) {
+            if ($this->feed->summarize) {
+                SummarizeEntry::dispatch($entry);
+            }
+
+            if ($this->feed->translate_to) {
+                TranslateEntry::dispatch($entry);
+            }
         }
     }
 }

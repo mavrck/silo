@@ -21,6 +21,7 @@ class Feed extends Model
         'description',
         'favicon_url',
         'summarize',
+        'translate_to',
     ];
 
     protected function casts(): array

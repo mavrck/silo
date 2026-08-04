@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('feeds', FeedController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::patch('/feeds/{feed}/summarize', [FeedController::class, 'toggleSummarize'])->name('feeds.summarize');
+    Route::patch('/feeds/{feed}/translate', [FeedController::class, 'updateTranslation'])->name('feeds.translate');
 
     Route::get('/opml/export', [OpmlController::class, 'export'])->name('opml.export');
     Route::post('/opml/import', [OpmlController::class, 'import'])->name('opml.import');

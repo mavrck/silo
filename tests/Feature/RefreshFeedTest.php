@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\RefreshFeed;
 use App\Jobs\SummarizeEntry;
+use App\Jobs\TranslateEntry;
 use App\Models\Feed;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -168,5 +169,42 @@ class RefreshFeedTest extends TestCase
 
         // Only the second (newly added) entry should be queued for summarization.
         Bus::assertDispatchedTimes(SummarizeEntry::class, 1);
+    }
+
+    public function test_it_does_not_queue_translation_when_the_feed_has_no_target_language(): void
+    {
+        Bus::fake([TranslateEntry::class]);
+        $feed = Feed::factory()->create(['translate_to' => null]);
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        Bus::assertNotDispatched(TranslateEntry::class);
+    }
+
+    public function test_it_queues_translation_for_new_entries_when_the_feed_has_a_target_language(): void
+    {
+        Bus::fake([TranslateEntry::class]);
+        $feed = Feed::factory()->create(['translate_to' => 'es']);
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        RefreshFeed::dispatchSync($feed);
+
+        Bus::assertDispatchedTimes(TranslateEntry::class, 1);
+    }
+
+    public function test_it_does_not_requeue_translation_for_an_entry_that_already_existed(): void
+    {
+        $feed = Feed::factory()->create(['translate_to' => 'es']);
+
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+        RefreshFeed::dispatchSync($feed);
+
+        Bus::fake([TranslateEntry::class]);
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed-updated.xml')]);
+        RefreshFeed::dispatchSync($feed->refresh());
+
+        // Only the second (newly added) entry should be queued for translation.
+        Bus::assertDispatchedTimes(TranslateEntry::class, 1);
     }
 }

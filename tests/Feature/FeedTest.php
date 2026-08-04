@@ -106,6 +106,84 @@ class FeedTest extends TestCase
         $this->assertFalse($feed->fresh()->summarize);
     }
 
+    public function test_user_can_set_a_target_language_when_subscribing(): void
+    {
+        Bus::fake();
+        $user = User::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'translate_to' => 'es',
+        ]);
+
+        $this->assertDatabaseHas('feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'translate_to' => 'es',
+        ]);
+    }
+
+    public function test_translate_to_defaults_to_null_when_subscribing(): void
+    {
+        Bus::fake();
+        $user = User::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+        ]);
+
+        $this->assertDatabaseHas('feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'translate_to' => null,
+        ]);
+    }
+
+    public function test_subscribing_with_an_invalid_language_code_fails_validation(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'translate_to' => 'not-a-real-language',
+        ]);
+
+        $response->assertSessionHasErrors('translate_to');
+        $this->assertDatabaseCount('feeds', 0);
+    }
+
+    public function test_user_can_set_and_clear_the_target_language_on_their_own_feed(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create(['translate_to' => null]);
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feed->id}/translate", [
+            'translate_to' => 'fr',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame('fr', $feed->fresh()->translate_to);
+
+        $this->actingAs($user)->patch("/feeds/{$feed->id}/translate", [
+            'translate_to' => null,
+        ]);
+        $this->assertNull($feed->fresh()->translate_to);
+    }
+
+    public function test_user_cannot_set_the_target_language_on_another_users_feed(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create(['translate_to' => null]);
+
+        $response = $this->actingAs($intruder)->patch("/feeds/{$feed->id}/translate", [
+            'translate_to' => 'fr',
+        ]);
+
+        $response->assertForbidden();
+        $this->assertNull($feed->fresh()->translate_to);
+    }
+
     public function test_subscribing_without_a_category_creates_an_uncategorized_one(): void
     {
         Bus::fake();

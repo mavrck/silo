@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -9,7 +9,30 @@ import type { Entry, Tag } from '@/types';
 
 const props = defineProps<{
     entry: Entry;
+    languages: Record<string, string>;
 }>();
+
+const showOriginal = ref(false);
+
+const hasTranslation = computed(() => !!props.entry.translated_content);
+
+const displayTitle = computed(() =>
+    hasTranslation.value && !showOriginal.value
+        ? props.entry.translated_title
+        : props.entry.title,
+);
+
+const displayContent = computed(() =>
+    hasTranslation.value && !showOriginal.value
+        ? props.entry.translated_content
+        : props.entry.content,
+);
+
+const translatedLanguageName = computed(() =>
+    props.entry.translated_language
+        ? (props.languages[props.entry.translated_language] ?? props.entry.translated_language)
+        : null,
+);
 
 function markUnread() {
     router.patch(route('entries.unread', props.entry.id));
@@ -56,7 +79,7 @@ function removeTag(tag: Tag) {
 </script>
 
 <template>
-    <Head :title="entry.title ?? 'Entry'" />
+    <Head :title="displayTitle ?? 'Entry'" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -103,7 +126,7 @@ function removeTag(tag: Tag) {
                     <h1
                         class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100"
                     >
-                        {{ entry.title }}
+                        {{ displayTitle }}
                     </h1>
                     <a
                         v-if="entry.url"
@@ -114,6 +137,32 @@ function removeTag(tag: Tag) {
                     >
                         View original &rarr;
                     </a>
+
+                    <p
+                        v-if="hasTranslation"
+                        class="mt-1 text-sm text-gray-500 dark:text-gray-400"
+                    >
+                        <template v-if="showOriginal">
+                            Showing the original text.
+                            <button
+                                type="button"
+                                class="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                                @click="showOriginal = false"
+                            >
+                                Show translation
+                            </button>
+                        </template>
+                        <template v-else>
+                            Translated to {{ translatedLanguageName }}.
+                            <button
+                                type="button"
+                                class="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                                @click="showOriginal = true"
+                            >
+                                Show original
+                            </button>
+                        </template>
+                    </p>
 
                     <div
                         v-if="entry.enclosure_url"
@@ -178,13 +227,14 @@ function removeTag(tag: Tag) {
                     </div>
 
                     <!--
-                        entry.content is sanitized server-side (Symfony HtmlSanitizer,
-                        see App\Services\Feeds\ContentSanitizer) before it is ever
-                        stored, so rendering it here is safe.
+                        entry.content and entry.translated_content are both sanitized
+                        server-side (Symfony HtmlSanitizer, see
+                        App\Services\Feeds\ContentSanitizer) before they are ever
+                        stored, so rendering either here is safe.
                     -->
                     <div
                         class="prose prose-sm mt-6 max-w-none dark:prose-invert"
-                        v-html="entry.content"
+                        v-html="displayContent"
                     />
 
                     <div class="mt-8 border-t border-gray-200 pt-4 dark:border-gray-700">

@@ -108,6 +108,7 @@ class EntryController extends Controller
 
         return Inertia::render('Entries/Show', [
             'entry' => $entry,
+            'languages' => config('translation.languages'),
         ]);
     }
 

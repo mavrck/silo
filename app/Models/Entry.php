@@ -38,6 +38,7 @@ class Entry extends Model
             'is_read' => 'boolean',
             'is_starred' => 'boolean',
             'summarized_at' => 'datetime',
+            'translated_at' => 'datetime',
             'enclosure_length' => 'integer',
             'duration_seconds' => 'integer',
             'episode_number' => 'integer',
@@ -90,6 +91,16 @@ class Entry extends Model
     public function setSummary(string $summary): void
     {
         $this->forceFill(['summary' => $summary, 'summarized_at' => now()])->save();
+    }
+
+    public function setTranslation(string $title, string $content, string $language): void
+    {
+        $this->forceFill([
+            'translated_title' => $title,
+            'translated_content' => $content,
+            'translated_language' => $language,
+            'translated_at' => now(),
+        ])->save();
     }
 
     public function isPodcastEpisode(): bool

@@ -21,6 +21,7 @@ export interface Feed {
     last_fetched_at: string | null;
     last_fetch_error: string | null;
     summarize: boolean;
+    translate_to: string | null;
 }
 
 export interface CategoryWithFeeds extends Category {
@@ -61,6 +62,9 @@ export interface Entry {
     content: string | null;
     summary: string | null;
     summarized_at: string | null;
+    translated_title: string | null;
+    translated_content: string | null;
+    translated_language: string | null;
     published_at: string | null;
     is_read: boolean;
     read_at: string | null;

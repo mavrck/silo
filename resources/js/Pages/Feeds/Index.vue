@@ -13,6 +13,7 @@ import type { CategoryWithFeeds, Feed } from '@/types';
 
 const props = defineProps<{
     categories: CategoryWithFeeds[];
+    languages: Record<string, string>;
 }>();
 
 const page = usePage();
@@ -27,6 +28,7 @@ const subscribeForm = useForm({
     title: '',
     category_id: '' as number | '',
     summarize: false,
+    translate_to: '',
 });
 
 function subscribe() {
@@ -48,6 +50,14 @@ function toggleSummarize(feed: Feed) {
     router.patch(
         route('feeds.summarize', feed.id),
         {},
+        { preserveScroll: true, preserveState: true },
+    );
+}
+
+function updateTranslation(feed: Feed, translateTo: string) {
+    router.patch(
+        route('feeds.translate', feed.id),
+        { translate_to: translateTo || null },
         { preserveScroll: true, preserveState: true },
     );
 }
@@ -169,6 +179,29 @@ function importOpml() {
                             <Checkbox v-model:checked="subscribeForm.summarize" />
                             Summarize new articles with AI
                         </label>
+                        <div class="flex items-center gap-2">
+                            <label
+                                for="subscribe-translate-to"
+                                class="text-sm text-gray-600 dark:text-gray-400"
+                            >
+                                Translate articles to
+                            </label>
+                            <select
+                                id="subscribe-translate-to"
+                                v-model="subscribeForm.translate_to"
+                                class="rounded-md border-gray-300 py-1 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                            >
+                                <option value="">Don't translate</option>
+                                <option
+                                    v-for="(name, code) in languages"
+                                    :key="code"
+                                    :value="code"
+                                >
+                                    {{ name }}
+                                </option>
+                            </select>
+                            <InputError :message="subscribeForm.errors.translate_to" />
+                        </div>
                         <PrimaryButton :disabled="subscribeForm.processing">
                             Subscribe
                         </PrimaryButton>
@@ -317,6 +350,25 @@ function importOpml() {
                                                 />
                                                 AI summary
                                             </label>
+                                            <select
+                                                :value="feed.translate_to ?? ''"
+                                                class="rounded-md border-gray-300 py-1 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                                @change="
+                                                    updateTranslation(
+                                                        feed,
+                                                        ($event.target as HTMLSelectElement).value,
+                                                    )
+                                                "
+                                            >
+                                                <option value="">Don't translate</option>
+                                                <option
+                                                    v-for="(name, code) in languages"
+                                                    :key="code"
+                                                    :value="code"
+                                                >
+                                                    {{ name }}
+                                                </option>
+                                            </select>
                                             <button
                                                 type="button"
                                                 class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
