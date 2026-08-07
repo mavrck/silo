@@ -231,6 +231,97 @@ class FeedTest extends TestCase
         $this->assertNull($feed->fresh()->translate_to);
     }
 
+    public function test_user_can_set_a_digest_frequency_when_subscribing(): void
+    {
+        Bus::fake();
+        $user = User::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'digest_frequency' => 'daily',
+        ]);
+
+        $this->assertDatabaseHas('feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'digest_frequency' => 'daily',
+        ]);
+    }
+
+    public function test_digest_frequency_defaults_to_off_when_subscribing(): void
+    {
+        Bus::fake();
+        $user = User::factory()->create();
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+
+        $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+        ]);
+
+        $this->assertDatabaseHas('feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'digest_frequency' => 'off',
+        ]);
+    }
+
+    public function test_subscribing_with_an_invalid_digest_frequency_fails_validation(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('/feeds', [
+            'url' => 'https://example.test/feed.xml',
+            'digest_frequency' => 'hourly',
+        ]);
+
+        $response->assertSessionHasErrors('digest_frequency');
+        $this->assertDatabaseCount('feeds', 0);
+    }
+
+    public function test_user_can_change_the_digest_frequency_on_their_own_feed(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create(['digest_frequency' => 'off']);
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feed->id}/digest", [
+            'digest_frequency' => 'weekly',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame('weekly', $feed->fresh()->digest_frequency);
+
+        $this->actingAs($user)->patch("/feeds/{$feed->id}/digest", [
+            'digest_frequency' => 'off',
+        ]);
+        $this->assertSame('off', $feed->fresh()->digest_frequency);
+    }
+
+    public function test_user_cannot_change_the_digest_frequency_on_another_users_feed(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create(['digest_frequency' => 'off']);
+
+        $response = $this->actingAs($intruder)->patch("/feeds/{$feed->id}/digest", [
+            'digest_frequency' => 'daily',
+        ]);
+
+        $response->assertForbidden();
+        $this->assertSame('off', $feed->fresh()->digest_frequency);
+    }
+
+    public function test_setting_an_invalid_digest_frequency_fails_validation(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create(['digest_frequency' => 'off']);
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feed->id}/digest", [
+            'digest_frequency' => 'hourly',
+        ]);
+
+        $response->assertSessionHasErrors('digest_frequency');
+        $this->assertSame('off', $feed->fresh()->digest_frequency);
+    }
+
     public function test_subscribing_without_a_category_creates_an_uncategorized_one(): void
     {
         Bus::fake();

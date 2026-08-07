@@ -2,9 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Mail\DigestMail;
-use App\Models\Entry;
-use App\Models\User;
+use App\Mail\FeedDigestMail;
+use App\Models\Feed;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
@@ -12,7 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class SendDigestEmail implements ShouldQueue
+class SendFeedDigestEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -22,7 +21,7 @@ class SendDigestEmail implements ShouldQueue
     private const DISPLAY_LIMIT = 100;
 
     public function __construct(
-        public readonly User $user,
+        public readonly Feed $feed,
         public readonly string $frequency,
     ) {}
 
@@ -30,40 +29,33 @@ class SendDigestEmail implements ShouldQueue
     {
         $defaultSince = $this->frequency === 'weekly' ? now()->subWeek() : now()->subDay();
         $cap = $this->frequency === 'weekly' ? now()->subWeeks(2) : now()->subDays(2);
-        $since = $this->user->digest_last_sent_at?->max($cap) ?? $defaultSince;
+        $since = $this->feed->digest_last_sent_at?->max($cap) ?? $defaultSince;
 
-        $query = Entry::query()
-            ->whereHas('feed', fn ($q) => $q->where('user_id', $this->user->id))
+        $query = $this->feed->entries()
             ->unread()
             ->where('published_at', '>=', $since);
 
         $totalCount = (clone $query)->count();
 
         if ($totalCount === 0) {
-            $this->user->recordDigestSent();
+            $this->feed->recordDigestSent();
 
             return;
         }
 
-        $entries = $query->with('feed.category')
-            ->orderByDesc('published_at')
+        $entries = $query->orderByDesc('published_at')
             ->limit(self::DISPLAY_LIMIT)
             ->get();
 
-        $grouped = $entries
-            ->groupBy(fn (Entry $entry) => $entry->feed->category->name)
-            ->map(fn ($entriesInCategory) => $entriesInCategory->groupBy(
-                fn (Entry $entry) => $entry->feed->title
-            ));
-
-        Mail::to($this->user)->send(new DigestMail(
-            user: $this->user,
-            groupedEntries: $grouped,
+        Mail::to($this->feed->user)->send(new FeedDigestMail(
+            user: $this->feed->user,
+            feed: $this->feed,
+            entries: $entries,
             frequency: $this->frequency,
             totalCount: $totalCount,
             displayedCount: $entries->count(),
         ));
 
-        $this->user->recordDigestSent();
+        $this->feed->recordDigestSent();
     }
 }

@@ -63,6 +63,7 @@ class FeedController extends Controller
             'description' => $feedData->getDescription(),
             'summarize' => $data['summarize'] ?? false,
             'translate_to' => $data['translate_to'] ?? null,
+            'digest_frequency' => $data['digest_frequency'] ?? 'off',
         ]);
 
         RefreshFeed::dispatch($feed);
@@ -139,6 +140,17 @@ class FeedController extends Controller
             'translate_to' => config('translation.enabled')
                 ? ['nullable', 'string', Rule::in(array_keys(config('translation.languages')))]
                 : ['prohibited'],
+        ]));
+
+        return back();
+    }
+
+    public function updateDigest(Request $request, Feed $feed): RedirectResponse
+    {
+        Gate::authorize('update', $feed);
+
+        $feed->update($request->validate([
+            'digest_frequency' => ['required', Rule::in(['off', 'daily', 'weekly'])],
         ]));
 
         return back();

@@ -30,6 +30,7 @@ const subscribeForm = useForm({
     category_id: '' as number | '',
     summarize: false,
     translate_to: '',
+    digest_frequency: 'off',
 });
 
 function subscribe() {
@@ -59,6 +60,14 @@ function updateTranslation(feed: Feed, translateTo: string) {
     router.patch(
         route('feeds.translate', feed.id),
         { translate_to: translateTo || null },
+        { preserveScroll: true, preserveState: true },
+    );
+}
+
+function updateDigest(feed: Feed, digestFrequency: string) {
+    router.patch(
+        route('feeds.digest', feed.id),
+        { digest_frequency: digestFrequency },
         { preserveScroll: true, preserveState: true },
     );
 }
@@ -202,6 +211,24 @@ function importOpml() {
                                 </option>
                             </select>
                             <InputError :message="subscribeForm.errors.translate_to" />
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label
+                                for="subscribe-digest-frequency"
+                                class="text-sm text-gray-600 dark:text-gray-400"
+                            >
+                                Digest emails
+                            </label>
+                            <select
+                                id="subscribe-digest-frequency"
+                                v-model="subscribeForm.digest_frequency"
+                                class="rounded-md border-gray-300 py-1 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                            >
+                                <option value="off">Off</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                            <InputError :message="subscribeForm.errors.digest_frequency" />
                         </div>
                         <PrimaryButton :disabled="subscribeForm.processing">
                             Subscribe
@@ -371,6 +398,20 @@ function importOpml() {
                                                 >
                                                     {{ name }}
                                                 </option>
+                                            </select>
+                                            <select
+                                                :value="feed.digest_frequency"
+                                                class="rounded-md border-gray-300 py-1 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                                @change="
+                                                    updateDigest(
+                                                        feed,
+                                                        ($event.target as HTMLSelectElement).value,
+                                                    )
+                                                "
+                                            >
+                                                <option value="off">No digest</option>
+                                                <option value="daily">Daily digest</option>
+                                                <option value="weekly">Weekly digest</option>
                                             </select>
                                             <button
                                                 type="button"

@@ -22,6 +22,7 @@ class Feed extends Model
         'favicon_url',
         'summarize',
         'translate_to',
+        'digest_frequency',
     ];
 
     protected function casts(): array
@@ -30,6 +31,7 @@ class Feed extends Model
             'last_modified_at' => 'datetime',
             'last_fetched_at' => 'datetime',
             'summarize' => 'boolean',
+            'digest_last_sent_at' => 'datetime',
         ];
     }
 
@@ -46,5 +48,10 @@ class Feed extends Model
     public function entries(): HasMany
     {
         return $this->hasMany(Entry::class);
+    }
+
+    public function recordDigestSent(): void
+    {
+        $this->forceFill(['digest_last_sent_at' => now()])->save();
     }
 }

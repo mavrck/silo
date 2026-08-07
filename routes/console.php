@@ -9,5 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('feeds:refresh')->everyFiveMinutes()->withoutOverlapping();
-Schedule::command('digests:send daily')->dailyAt('07:00');
-Schedule::command('digests:send weekly')->weeklyOn(1, '07:00');
+Schedule::command('digests:send daily')->dailyAt('06:00')->timezone('America/New_York');
+Schedule::command('digests:send weekly')->weeklyOn(1, '06:00')->timezone('America/New_York');

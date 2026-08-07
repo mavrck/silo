@@ -29,6 +29,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'digest_last_sent_at' => 'datetime',
         ];
     }
 
@@ -45,5 +46,10 @@ class User extends Authenticatable
     public function tags(): HasMany
     {
         return $this->hasMany(Tag::class);
+    }
+
+    public function recordDigestSent(): void
+    {
+        $this->forceFill(['digest_last_sent_at' => now()])->save();
     }
 }

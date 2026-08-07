@@ -33,6 +33,7 @@ class StoreFeedRequest extends FormRequest
             'translate_to' => config('translation.enabled')
                 ? ['nullable', 'string', Rule::in(array_keys(config('translation.languages')))]
                 : ['prohibited'],
+            'digest_frequency' => ['sometimes', Rule::in(['off', 'daily', 'weekly'])],
         ];
     }
 }

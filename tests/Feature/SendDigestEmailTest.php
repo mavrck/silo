@@ -122,6 +122,61 @@ class SendDigestEmailTest extends TestCase
         });
     }
 
+    public function test_it_includes_entries_since_the_last_send_even_outside_the_default_window(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create(['digest_last_sent_at' => now()->subHours(36)]);
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create(['published_at' => now()->subHours(30)]);
+
+        SendDigestEmail::dispatchSync($user, 'daily');
+
+        Mail::assertSent(DigestMail::class, fn (DigestMail $mail) => $mail->totalCount === 1);
+    }
+
+    public function test_the_lookback_is_capped_at_twice_the_cadence(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create(['digest_last_sent_at' => now()->subDays(10)]);
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create(['published_at' => now()->subDays(5)]);
+        Entry::factory()->for($feed)->create(['published_at' => now()->subHours(6)]);
+
+        SendDigestEmail::dispatchSync($user, 'daily');
+
+        Mail::assertSent(DigestMail::class, fn (DigestMail $mail) => $mail->totalCount === 1);
+    }
+
+    public function test_a_successful_send_advances_digest_last_sent_at(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create(['digest_last_sent_at' => null]);
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create(['published_at' => now()]);
+
+        SendDigestEmail::dispatchSync($user, 'daily');
+
+        $this->assertNotNull($user->fresh()->digest_last_sent_at);
+        $this->assertTrue($user->fresh()->digest_last_sent_at->greaterThan(now()->subMinute()));
+    }
+
+    public function test_a_run_with_nothing_unread_still_advances_digest_last_sent_at(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create(['digest_last_sent_at' => null]);
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->read()->for($feed)->create(['published_at' => now()]);
+
+        SendDigestEmail::dispatchSync($user, 'daily');
+
+        Mail::assertNothingSent();
+        $this->assertNotNull($user->fresh()->digest_last_sent_at);
+    }
+
     public function test_the_digest_renders_cleanly_when_an_entry_has_no_summary(): void
     {
         Mail::fake();

@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::patch('/feeds/{feed}/summarize', [FeedController::class, 'toggleSummarize'])->name('feeds.summarize');
     Route::patch('/feeds/{feed}/translate', [FeedController::class, 'updateTranslation'])->name('feeds.translate');
+    Route::patch('/feeds/{feed}/digest', [FeedController::class, 'updateDigest'])->name('feeds.digest');
     Route::patch('/feeds/{feed}/mark-all-read', [FeedController::class, 'markAllRead'])->name('feeds.mark-all-read');
 
     Route::get('/opml/export', [OpmlController::class, 'export'])->name('opml.export');

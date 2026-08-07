@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Jobs\SendDigestEmail;
+use App\Jobs\SendFeedDigestEmail;
+use App\Models\Feed;
 use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -28,7 +30,13 @@ class SendDigestsCommand extends Command
             SendDigestEmail::dispatch($user, $frequency);
         }
 
-        $this->info("Dispatched {$users->count()} {$frequency} digest job(s).");
+        $feeds = Feed::query()->where('digest_frequency', $frequency)->get();
+
+        foreach ($feeds as $feed) {
+            SendFeedDigestEmail::dispatch($feed, $frequency);
+        }
+
+        $this->info("Dispatched {$users->count()} {$frequency} user digest job(s) and {$feeds->count()} {$frequency} feed digest job(s).");
 
         return self::SUCCESS;
     }

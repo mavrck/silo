@@ -22,6 +22,7 @@ export interface Feed {
     last_fetch_error: string | null;
     summarize: boolean;
     translate_to: string | null;
+    digest_frequency: string;
 }
 
 export interface CategoryWithFeeds extends Category {
