@@ -1,21 +1,13 @@
 <script setup lang="ts">
-import type {
-    CategoryWithFeedCounts,
-    EntryFilters,
-    SavedSearch,
-    Tag,
-} from '@/types';
+import type { CategoryWithFeedCounts, EntryFilters, Tag } from '@/types';
 
 defineProps<{
     sidebar: CategoryWithFeedCounts[];
     tags: Tag[];
-    savedSearches: SavedSearch[];
     filters: EntryFilters;
     totalUnread: number;
     isActive: (key: keyof EntryFilters, value?: string | number) => boolean;
     visit: (query: Record<string, string | number | undefined>) => void;
-    applySavedSearch: (search: SavedSearch) => void;
-    deleteSavedSearch: (search: SavedSearch) => void;
 }>();
 
 function categoryUnread(category: CategoryWithFeedCounts): number {
@@ -119,34 +111,6 @@ function categoryUnread(category: CategoryWithFeedCounts): number {
             >
                 #{{ tag.name }}
             </button>
-        </div>
-
-        <div v-if="savedSearches.length" class="space-y-1">
-            <p
-                class="px-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500"
-            >
-                Saved searches
-            </p>
-            <div
-                v-for="search in savedSearches"
-                :key="search.id"
-                class="group flex items-center justify-between rounded px-2 py-1 text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50"
-            >
-                <button
-                    type="button"
-                    class="truncate text-left"
-                    @click="applySavedSearch(search)"
-                >
-                    {{ search.name }}
-                </button>
-                <button
-                    type="button"
-                    class="hidden shrink-0 text-xs text-gray-400 hover:text-red-500 group-hover:inline"
-                    @click="deleteSavedSearch(search)"
-                >
-                    &times;
-                </button>
-            </div>
         </div>
     </nav>
 </template>

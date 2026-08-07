@@ -80,21 +80,6 @@ export interface Entry {
     image_url: string | null;
 }
 
-export interface SavedSearchFilters {
-    q?: string;
-    feed_id?: number;
-    category_id?: number;
-    tag_id?: number;
-    unread?: boolean;
-    starred?: boolean;
-}
-
-export interface SavedSearch {
-    id: number;
-    name: string;
-    filters: SavedSearchFilters;
-}
-
 export interface ApiToken {
     id: number;
     name: string;

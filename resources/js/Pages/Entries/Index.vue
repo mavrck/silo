@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import DangerButton from '@/Components/DangerButton.vue';
 import Drawer from '@/Components/Drawer.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import Sidebar from './Partials/Sidebar.vue';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { formatDuration } from '@/utils/duration';
 import type {
     CategoryWithFeedCounts,
     Entry,
     EntryFilters,
     Paginated,
-    SavedSearch,
     Tag,
 } from '@/types';
 
@@ -22,7 +19,6 @@ const props = defineProps<{
     entries: Paginated<Entry>;
     sidebar: CategoryWithFeedCounts[];
     tags: Tag[];
-    savedSearches: SavedSearch[];
     filters: EntryFilters;
     unreadCount: number;
 }>();
@@ -125,64 +121,6 @@ const searchTerm = ref(props.filters.q ?? '');
 function submitSearch() {
     visit({ ...props.filters, q: searchTerm.value || undefined });
 }
-
-// Saved searches
-const activeFilterCount = computed(
-    () => Object.values(props.filters).filter(Boolean).length,
-);
-
-function applySavedSearch(search: SavedSearch) {
-    const query: Query = {};
-    const { q, feed_id, category_id, tag_id, unread, starred } = search.filters;
-    if (q) query.q = q;
-    if (feed_id) query.feed_id = feed_id;
-    if (category_id) query.category_id = category_id;
-    if (tag_id) query.tag_id = tag_id;
-    if (unread) query.unread = 1;
-    if (starred) query.starred = 1;
-
-    searchTerm.value = q ?? '';
-    visit(query);
-}
-
-function deleteSavedSearch(search: SavedSearch) {
-    sidebarOpen.value = false;
-
-    router.delete(route('saved-searches.destroy', search.id), {
-        preserveScroll: true,
-    });
-}
-
-const showSaveForm = ref(false);
-const saveForm = useForm({
-    name: '',
-    q: '',
-    feed_id: '' as string | number,
-    category_id: '' as string | number,
-    tag_id: '' as string | number,
-    unread: '' as string | number,
-    starred: '' as string | number,
-});
-
-function openSaveForm() {
-    saveForm.reset();
-    saveForm.q = props.filters.q ?? '';
-    saveForm.feed_id = props.filters.feed_id ?? '';
-    saveForm.category_id = props.filters.category_id ?? '';
-    saveForm.tag_id = props.filters.tag_id ?? '';
-    saveForm.unread = props.filters.unread ?? '';
-    saveForm.starred = props.filters.starred ?? '';
-    showSaveForm.value = true;
-}
-
-function submitSaveForm() {
-    saveForm.post(route('saved-searches.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            showSaveForm.value = false;
-        },
-    });
-}
 </script>
 
 <template>
@@ -241,13 +179,10 @@ function submitSaveForm() {
                         <Sidebar
                             :sidebar="sidebar"
                             :tags="tags"
-                            :saved-searches="savedSearches"
                             :filters="filters"
                             :total-unread="totalUnread"
                             :is-active="isActive"
                             :visit="visit"
-                            :apply-saved-search="applySavedSearch"
-                            :delete-saved-search="deleteSavedSearch"
                         />
                     </aside>
 
@@ -271,36 +206,7 @@ function submitSaveForm() {
                                 >
                                     Mark all as read
                                 </SecondaryButton>
-                                <SecondaryButton
-                                    v-if="activeFilterCount"
-                                    @click="openSaveForm"
-                                >
-                                    Save search
-                                </SecondaryButton>
                             </div>
-
-                            <form
-                                v-if="showSaveForm"
-                                @submit.prevent="submitSaveForm"
-                                class="mt-3 flex items-center gap-2"
-                            >
-                                <TextInput
-                                    v-model="saveForm.name"
-                                    placeholder="Name this search"
-                                    class="block flex-1"
-                                    autofocus
-                                />
-                                <PrimaryButton :disabled="saveForm.processing">
-                                    Save
-                                </PrimaryButton>
-                                <button
-                                    type="button"
-                                    class="text-sm text-gray-500 dark:text-gray-400"
-                                    @click="showSaveForm = false"
-                                >
-                                    Cancel
-                                </button>
-                            </form>
                         </div>
 
                         <p
@@ -412,13 +318,10 @@ function submitSaveForm() {
             <Sidebar
                 :sidebar="sidebar"
                 :tags="tags"
-                :saved-searches="savedSearches"
                 :filters="filters"
                 :total-unread="totalUnread"
                 :is-active="isActive"
                 :visit="visit"
-                :apply-saved-search="applySavedSearch"
-                :delete-saved-search="deleteSavedSearch"
             />
         </Drawer>
     </AuthenticatedLayout>

@@ -40,13 +40,11 @@ class EntryController extends Controller
             ->get(['id', 'name', 'position']);
 
         $tags = $user->tags()->orderBy('name')->get(['id', 'name']);
-        $savedSearches = $user->savedSearches()->orderBy('name')->get(['id', 'name', 'filters']);
 
         return Inertia::render('Entries/Index', [
             'entries' => $entries,
             'sidebar' => $sidebar,
             'tags' => $tags,
-            'savedSearches' => $savedSearches,
             'filters' => $request->only(['feed_id', 'category_id', 'tag_id', 'q', 'unread', 'starred']),
             'unreadCount' => $this->filteredEntriesQuery($request, $user)->unread()->count(),
         ]);
