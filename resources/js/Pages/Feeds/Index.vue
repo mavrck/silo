@@ -8,7 +8,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm, usePage, router } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3';
 import type { CategoryWithFeeds, Feed } from '@/types';
 
 const props = defineProps<{
@@ -316,11 +316,12 @@ function importOpml() {
                                     </form>
                                     <div v-else class="flex items-center justify-between">
                                         <div class="min-w-0">
-                                            <p
-                                                class="truncate font-medium text-gray-900 dark:text-gray-100"
+                                            <Link
+                                                :href="route('feeds.show', feed.id)"
+                                                class="block truncate font-medium text-gray-900 hover:text-indigo-600 dark:text-gray-100 dark:hover:text-indigo-400"
                                             >
                                                 {{ feed.title }}
-                                            </p>
+                                            </Link>
                                             <p
                                                 v-if="feed.last_fetch_error"
                                                 class="truncate text-sm text-red-600 dark:text-red-400"

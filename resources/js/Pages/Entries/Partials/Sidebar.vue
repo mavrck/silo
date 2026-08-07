@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { CategoryWithFeedCounts, EntryFilters, Tag } from '@/types';
+import type {
+    CategoryWithFeedCounts,
+    EntryFilters,
+    FeedWithUnreadCount,
+    Tag,
+} from '@/types';
 
 defineProps<{
     sidebar: CategoryWithFeedCounts[];
@@ -8,6 +13,7 @@ defineProps<{
     totalUnread: number;
     isActive: (key: keyof EntryFilters, value?: string | number) => boolean;
     visit: (query: Record<string, string | number | undefined>) => void;
+    goToFeed: (feed: FeedWithUnreadCount) => void;
 }>();
 
 function categoryUnread(category: CategoryWithFeedCounts): number {
@@ -79,7 +85,7 @@ function categoryUnread(category: CategoryWithFeedCounts): number {
                         ? 'bg-indigo-50 font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
                         : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50'
                 "
-                @click="visit({ feed_id: feed.id })"
+                @click="goToFeed(feed)"
             >
                 <span class="truncate">{{ feed.title }}</span>
                 <span

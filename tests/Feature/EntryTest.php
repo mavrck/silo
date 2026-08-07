@@ -58,22 +58,6 @@ class EntryTest extends TestCase
         );
     }
 
-    public function test_index_can_filter_by_feed(): void
-    {
-        $user = User::factory()->create();
-        $feedA = Feed::factory()->for($user)->create();
-        $feedB = Feed::factory()->for($user)->create();
-        $entryA = Entry::factory()->for($feedA)->create();
-        Entry::factory()->for($feedB)->create();
-
-        $response = $this->actingAs($user)->get("/entries?feed_id={$feedA->id}");
-
-        $response->assertInertia(fn ($page) => $page
-            ->has('entries.data', 1)
-            ->where('entries.data.0.id', $entryA->id)
-        );
-    }
-
     public function test_index_can_filter_by_category(): void
     {
         $user = User::factory()->create();
@@ -204,13 +188,15 @@ class EntryTest extends TestCase
     public function test_index_reports_the_unread_count_for_the_current_filters(): void
     {
         $user = User::factory()->create();
-        $feedA = Feed::factory()->for($user)->create();
-        $feedB = Feed::factory()->for($user)->create();
+        $categoryA = Category::factory()->for($user)->create();
+        $categoryB = Category::factory()->for($user)->create();
+        $feedA = Feed::factory()->for($user)->create(['category_id' => $categoryA->id]);
+        $feedB = Feed::factory()->for($user)->create(['category_id' => $categoryB->id]);
         Entry::factory()->for($feedA)->create();
         Entry::factory()->for($feedA)->read()->create();
         Entry::factory()->for($feedB)->create();
 
-        $response = $this->actingAs($user)->get("/entries?feed_id={$feedA->id}");
+        $response = $this->actingAs($user)->get("/entries?category_id={$categoryA->id}");
 
         $response->assertInertia(fn ($page) => $page->where('unreadCount', 1));
     }
@@ -218,13 +204,15 @@ class EntryTest extends TestCase
     public function test_mark_all_read_marks_unread_entries_matching_the_current_filters(): void
     {
         $user = User::factory()->create();
-        $feedA = Feed::factory()->for($user)->create();
-        $feedB = Feed::factory()->for($user)->create();
+        $categoryA = Category::factory()->for($user)->create();
+        $categoryB = Category::factory()->for($user)->create();
+        $feedA = Feed::factory()->for($user)->create(['category_id' => $categoryA->id]);
+        $feedB = Feed::factory()->for($user)->create(['category_id' => $categoryB->id]);
         $unreadInFeedA = Entry::factory()->for($feedA)->create();
         $alreadyReadInFeedA = Entry::factory()->for($feedA)->read()->create();
         $unreadInFeedB = Entry::factory()->for($feedB)->create();
 
-        $response = $this->actingAs($user)->patch('/entries/mark-all-read', ['feed_id' => $feedA->id]);
+        $response = $this->actingAs($user)->patch('/entries/mark-all-read', ['category_id' => $categoryA->id]);
 
         $response->assertRedirect();
         $response->assertSessionHas('status', 'Marked 1 entry as read.');

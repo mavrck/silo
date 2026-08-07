@@ -45,7 +45,7 @@ class EntryController extends Controller
             'entries' => $entries,
             'sidebar' => $sidebar,
             'tags' => $tags,
-            'filters' => $request->only(['feed_id', 'category_id', 'tag_id', 'q', 'unread', 'starred']),
+            'filters' => $request->only(['category_id', 'tag_id', 'q', 'unread', 'starred']),
             'unreadCount' => $this->filteredEntriesQuery($request, $user)->unread()->count(),
         ]);
     }
@@ -71,10 +71,6 @@ class EntryController extends Controller
     {
         $query = Entry::query()
             ->whereHas('feed', fn ($q) => $q->where('user_id', $user->id));
-
-        if ($request->filled('feed_id')) {
-            $query->where('feed_id', $request->integer('feed_id'));
-        }
 
         if ($request->filled('category_id')) {
             $categoryId = $request->integer('category_id');

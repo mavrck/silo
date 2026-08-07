@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\RefreshFeed;
 use App\Models\Category;
+use App\Models\Entry;
 use App\Models\Feed;
 use App\Models\User;
 use GuzzleHttp\Psr7\Response;
@@ -352,5 +353,100 @@ class FeedTest extends TestCase
         $response = $this->get('/feeds');
 
         $response->assertRedirect('/login');
+    }
+
+    public function test_user_can_view_their_own_feed_page(): void
+    {
+        $user = User::factory()->create();
+        $feedA = Feed::factory()->for($user)->create();
+        $feedB = Feed::factory()->for($user)->create();
+        $entryA = Entry::factory()->for($feedA)->create();
+        Entry::factory()->for($feedB)->create();
+
+        $response = $this->actingAs($user)->get("/feeds/{$feedA->id}");
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Feeds/Show')
+            ->where('feed.id', $feedA->id)
+            ->has('entries.data', 1)
+            ->where('entries.data.0.id', $entryA->id)
+        );
+    }
+
+    public function test_user_cannot_view_another_users_feed_page(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create();
+
+        $response = $this->actingAs($intruder)->get("/feeds/{$feed->id}");
+
+        $response->assertForbidden();
+    }
+
+    public function test_feed_page_can_filter_by_unread_and_starred(): void
+    {
+        // Full-text `q` search isn't covered here — it needs a real commit to
+        // populate MySQL's FULLTEXT index cache, which RefreshDatabase's
+        // per-test transaction never does (see SearchTest.php). Reader-level
+        // search behavior is already covered there.
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create();
+        Entry::factory()->for($feed)->read()->create();
+        $starred = Entry::factory()->for($feed)->starred()->create();
+
+        $this->actingAs($user)->get("/feeds/{$feed->id}?unread=1")
+            ->assertInertia(fn ($page) => $page->has('entries.data', 2));
+
+        $this->actingAs($user)->get("/feeds/{$feed->id}?starred=1")
+            ->assertInertia(fn ($page) => $page
+                ->has('entries.data', 1)
+                ->where('entries.data.0.id', $starred->id)
+            );
+    }
+
+    public function test_feed_page_reports_the_unread_count_scoped_to_the_feed(): void
+    {
+        $user = User::factory()->create();
+        $feedA = Feed::factory()->for($user)->create();
+        $feedB = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feedA)->create();
+        Entry::factory()->for($feedA)->read()->create();
+        Entry::factory()->for($feedB)->create();
+
+        $response = $this->actingAs($user)->get("/feeds/{$feedA->id}");
+
+        $response->assertInertia(fn ($page) => $page->where('unreadCount', 1));
+    }
+
+    public function test_user_can_mark_all_of_a_feeds_entries_as_read(): void
+    {
+        $user = User::factory()->create();
+        $feedA = Feed::factory()->for($user)->create();
+        $feedB = Feed::factory()->for($user)->create();
+        $unreadInFeedA = Entry::factory()->for($feedA)->create();
+        $unreadInFeedB = Entry::factory()->for($feedB)->create();
+
+        $response = $this->actingAs($user)->patch("/feeds/{$feedA->id}/mark-all-read");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('status', 'Marked 1 entry as read.');
+        $this->assertTrue($unreadInFeedA->fresh()->is_read);
+        $this->assertFalse($unreadInFeedB->fresh()->is_read);
+    }
+
+    public function test_user_cannot_mark_all_read_on_another_users_feed(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create();
+        $entry = Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($intruder)->patch("/feeds/{$feed->id}/mark-all-read");
+
+        $response->assertForbidden();
+        $this->assertFalse($entry->fresh()->is_read);
     }
 }

@@ -36,6 +36,10 @@ export interface CategoryWithFeedCounts extends Category {
     feeds: FeedWithUnreadCount[];
 }
 
+export interface FeedWithCategory extends Feed {
+    category: Category;
+}
+
 export interface EntryFeed {
     id: number;
     title: string;
