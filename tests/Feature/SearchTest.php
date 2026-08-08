@@ -5,23 +5,12 @@ namespace Tests\Feature;
 use App\Models\Entry;
 use App\Models\Feed;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/**
- * Deliberately does not use RefreshDatabase: InnoDB only flushes a FULLTEXT
- * index's in-memory cache on commit, so rows inserted inside RefreshDatabase's
- * wrapping (and never-committed) transaction are invisible to MATCH AGAINST
- * queries even within the same connection. These tests commit for real and
- * clean up manually instead.
- */
 class SearchTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        User::query()->delete();
-
-        parent::tearDown();
-    }
+    use RefreshDatabase;
 
     public function test_index_can_search_entry_content(): void
     {

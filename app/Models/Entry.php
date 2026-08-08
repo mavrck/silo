@@ -68,7 +68,10 @@ class Entry extends Model
 
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->whereFullText(['title', 'content'], $term);
+        return $query->where(
+            fn (Builder $query) => $query->where('title', 'like', "%{$term}%")
+                ->orWhere('content', 'like', "%{$term}%")
+        );
     }
 
     public function markRead(): void

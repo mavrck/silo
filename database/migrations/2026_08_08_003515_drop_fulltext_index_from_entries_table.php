@@ -7,19 +7,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        // SQLite has no fulltext index support; skip so this migration can
-        // still replay cleanly on drivers other than the MySQL it targets.
+        // Nothing to drop on drivers where the earlier migration never
+        // created the index in the first place (see that migration).
         if (DB::getDriverName() !== 'mysql') {
             return;
         }
 
         Schema::table('entries', function (Blueprint $table) {
-            $table->fullText(['title', 'content']);
+            $table->dropFullText(['title', 'content']);
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         if (DB::getDriverName() !== 'mysql') {
@@ -27,7 +33,7 @@ return new class extends Migration
         }
 
         Schema::table('entries', function (Blueprint $table) {
-            $table->dropFullText(['title', 'content']);
+            $table->fullText(['title', 'content']);
         });
     }
 };
