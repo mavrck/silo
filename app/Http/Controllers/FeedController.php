@@ -104,6 +104,7 @@ class FeedController extends Controller
             'tags' => $tags,
             'filters' => $request->only(['q', 'unread', 'starred']),
             'unreadCount' => $this->filteredEntriesQuery($request, $feed)->unread()->count(),
+            'readCount' => $this->filteredEntriesQuery($request, $feed)->read()->count(),
         ]);
     }
 
@@ -167,6 +168,17 @@ class FeedController extends Controller
         return back()->with('status', $count > 0
             ? 'Marked '.$count.' '.Str::plural('entry', $count).' as read.'
             : 'No unread entries to mark as read.');
+    }
+
+    public function deleteRead(Request $request, Feed $feed): RedirectResponse
+    {
+        Gate::authorize('view', $feed);
+
+        $count = $this->filteredEntriesQuery($request, $feed)->read()->delete();
+
+        return back()->with('status', $count > 0
+            ? 'Deleted '.$count.' read '.Str::plural('entry', $count).'.'
+            : 'No read entries to delete.');
     }
 
     /**

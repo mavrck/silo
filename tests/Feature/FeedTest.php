@@ -540,4 +540,79 @@ class FeedTest extends TestCase
         $response->assertForbidden();
         $this->assertFalse($entry->fresh()->is_read);
     }
+
+    public function test_feed_show_page_reports_the_read_count(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->read()->create();
+        Entry::factory()->for($feed)->read()->create();
+        Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($user)->get("/feeds/{$feed->id}");
+
+        $response->assertInertia(fn ($page) => $page->where('readCount', 2));
+    }
+
+    public function test_user_can_delete_read_entries_on_their_own_feed(): void
+    {
+        $user = User::factory()->create();
+        $feedA = Feed::factory()->for($user)->create();
+        $feedB = Feed::factory()->for($user)->create();
+        $readInFeedA = Entry::factory()->for($feedA)->read()->create();
+        $unreadInFeedA = Entry::factory()->for($feedA)->create();
+        $readInFeedB = Entry::factory()->for($feedB)->read()->create();
+
+        $response = $this->actingAs($user)->delete("/feeds/{$feedA->id}/delete-read");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('status', 'Deleted 1 read entry.');
+        $this->assertSoftDeleted('entries', ['id' => $readInFeedA->id]);
+        $this->assertDatabaseHas('entries', ['id' => $unreadInFeedA->id, 'deleted_at' => null]);
+        $this->assertDatabaseHas('entries', ['id' => $readInFeedB->id, 'deleted_at' => null]);
+    }
+
+    public function test_delete_read_respects_search_and_starred_filters(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+
+        $matches = Entry::factory()->for($feed)->read()->create(['title' => 'Distributed systems']);
+        $matches->toggleStarred();
+
+        $wrongStar = Entry::factory()->for($feed)->read()->create(['title' => 'Distributed systems too']);
+
+        $response = $this->actingAs($user)->delete("/feeds/{$feed->id}/delete-read", [
+            'q' => 'distributed',
+            'starred' => 1,
+        ]);
+
+        $response->assertSessionHas('status', 'Deleted 1 read entry.');
+        $this->assertSoftDeleted('entries', ['id' => $matches->id]);
+        $this->assertDatabaseHas('entries', ['id' => $wrongStar->id, 'deleted_at' => null]);
+    }
+
+    public function test_user_cannot_delete_read_entries_on_another_users_feed(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create();
+        $entry = Entry::factory()->for($feed)->read()->create();
+
+        $response = $this->actingAs($intruder)->delete("/feeds/{$feed->id}/delete-read");
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('entries', ['id' => $entry->id, 'deleted_at' => null]);
+    }
+
+    public function test_delete_read_flashes_a_message_when_there_is_nothing_to_delete(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($user)->delete("/feeds/{$feed->id}/delete-read");
+
+        $response->assertSessionHas('status', 'No read entries to delete.');
+    }
 }

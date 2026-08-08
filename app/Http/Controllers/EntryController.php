@@ -133,6 +133,23 @@ class EntryController extends Controller
         return back();
     }
 
+    public function destroy(Entry $entry): RedirectResponse
+    {
+        Gate::authorize('delete', $entry);
+
+        // If this came from the entry's own show page, back() would try to
+        // redirect right back to a page that no longer exists — send to the
+        // index instead, mirroring markUnread()'s handling of the same
+        // problem. Otherwise (deleted from a list row) back() correctly
+        // returns to that list.
+        $cameFromShowPage = url()->previous() === route('entries.show', $entry);
+
+        $entry->delete();
+
+        return ($cameFromShowPage ? redirect()->route('entries.index') : back())
+            ->with('status', 'Entry deleted.');
+    }
+
     public function attachTag(StoreTagRequest $request, Entry $entry): RedirectResponse
     {
         Gate::authorize('update', $entry);

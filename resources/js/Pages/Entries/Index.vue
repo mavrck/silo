@@ -91,6 +91,17 @@ function toggleStar(entry: Entry) {
     );
 }
 
+function deleteEntry(entry: Entry) {
+    if (!confirm(`Delete "${entry.title ?? 'this entry'}"?`)) {
+        return;
+    }
+
+    router.delete(route('entries.destroy', entry.id), {
+        preserveState: true,
+        preserveScroll: true,
+    });
+}
+
 function markAllRead() {
     const noun = props.unreadCount === 1 ? 'entry' : 'entries';
 
@@ -199,7 +210,11 @@ function submitSearch() {
                             </div>
                         </div>
 
-                        <EntryList :entries="entries" :toggle-star="toggleStar" />
+                        <EntryList
+                            :entries="entries"
+                            :toggle-star="toggleStar"
+                            :delete-entry="deleteEntry"
+                        />
                     </div>
                 </div>
             </div>

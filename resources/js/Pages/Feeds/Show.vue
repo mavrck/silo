@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 import Drawer from '@/Components/Drawer.vue';
 import EntryList from '@/Components/EntryList.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
@@ -24,6 +25,7 @@ const props = defineProps<{
     tags: Tag[];
     filters: EntryFilters;
     unreadCount: number;
+    readCount: number;
 }>();
 
 const page = usePage();
@@ -91,6 +93,17 @@ function toggleStar(entry: Entry) {
     );
 }
 
+function deleteEntry(entry: Entry) {
+    if (!confirm(`Delete "${entry.title ?? 'this entry'}"?`)) {
+        return;
+    }
+
+    router.delete(route('entries.destroy', entry.id), {
+        preserveState: true,
+        preserveScroll: true,
+    });
+}
+
 function markAllRead() {
     const noun = props.unreadCount === 1 ? 'entry' : 'entries';
 
@@ -103,6 +116,20 @@ function markAllRead() {
         { ...props.filters },
         { preserveState: true, preserveScroll: true },
     );
+}
+
+function deleteRead() {
+    const noun = props.readCount === 1 ? 'entry' : 'entries';
+
+    if (!confirm(`Delete ${props.readCount} read ${noun}? This cannot be undone.`)) {
+        return;
+    }
+
+    router.delete(route('feeds.delete-read', props.feed.id), {
+        data: { ...props.filters },
+        preserveState: true,
+        preserveScroll: true,
+    });
 }
 
 // Search
@@ -281,12 +308,20 @@ function submitSearch() {
                                 >
                                     Mark all as read
                                 </SecondaryButton>
+                                <DangerButton
+                                    v-if="readCount > 0"
+                                    type="button"
+                                    @click="deleteRead"
+                                >
+                                    Delete read
+                                </DangerButton>
                             </div>
                         </div>
 
                         <EntryList
                             :entries="entries"
                             :toggle-star="toggleStar"
+                            :delete-entry="deleteEntry"
                             :show-feed-name="false"
                             empty-message="No entries yet."
                         />

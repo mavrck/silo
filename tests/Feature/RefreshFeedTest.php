@@ -76,6 +76,23 @@ class RefreshFeedTest extends TestCase
         $this->assertDatabaseCount('entries', 2);
     }
 
+    public function test_it_does_not_resurrect_a_deleted_entry_on_a_later_refresh(): void
+    {
+        $feed = Feed::factory()->create();
+
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+        RefreshFeed::dispatchSync($feed);
+
+        $entry = $feed->entries()->sole();
+        $entry->delete();
+
+        $this->fakeFeedIo([file_get_contents(__DIR__.'/../Fixtures/sample-feed.xml')]);
+        RefreshFeed::dispatchSync($feed->refresh());
+
+        $this->assertDatabaseCount('entries', 1);
+        $this->assertSoftDeleted('entries', ['id' => $entry->id]);
+    }
+
     public function test_it_can_refresh_a_feed_again_after_the_server_sent_a_last_modified_header(): void
     {
         // Regression test: a prior bug passed the feed's last_modified_at as

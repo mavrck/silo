@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Entry extends Model
 {
     /** @use HasFactory<EntryFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'guid',
@@ -64,6 +65,11 @@ class Entry extends Model
     public function scopeStarred(Builder $query): Builder
     {
         return $query->where('is_starred', true);
+    }
+
+    public function scopeRead(Builder $query): Builder
+    {
+        return $query->where('is_read', true);
     }
 
     public function scopeSearch(Builder $query, string $term): Builder
