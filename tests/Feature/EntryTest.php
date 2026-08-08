@@ -178,6 +178,70 @@ class EntryTest extends TestCase
         $this->assertFalse($entry->fresh()->is_starred);
     }
 
+    public function test_deleting_an_entry_from_its_own_show_page_redirects_to_the_index(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        $entry = Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($user)
+            ->from(route('entries.show', $entry))
+            ->delete("/entries/{$entry->id}");
+
+        $response->assertRedirect(route('entries.index'));
+        $response->assertSessionHas('status', 'Entry deleted.');
+        $this->assertSoftDeleted('entries', ['id' => $entry->id]);
+    }
+
+    public function test_deleting_an_entry_from_a_list_redirects_back(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        $entry = Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($user)
+            ->from(route('feeds.show', $feed))
+            ->delete("/entries/{$entry->id}");
+
+        $response->assertRedirect(route('feeds.show', $feed));
+        $this->assertSoftDeleted('entries', ['id' => $entry->id]);
+    }
+
+    public function test_user_cannot_delete_another_users_entry(): void
+    {
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $feed = Feed::factory()->for($owner)->create();
+        $entry = Entry::factory()->for($feed)->create();
+
+        $response = $this->actingAs($intruder)->delete("/entries/{$entry->id}");
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('entries', ['id' => $entry->id, 'deleted_at' => null]);
+    }
+
+    public function test_guests_cannot_delete_an_entry(): void
+    {
+        $feed = Feed::factory()->create();
+        $entry = Entry::factory()->for($feed)->create();
+
+        $response = $this->delete("/entries/{$entry->id}");
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_deleted_entries_are_excluded_from_the_reader_index(): void
+    {
+        $user = User::factory()->create();
+        $feed = Feed::factory()->for($user)->create();
+        $entry = Entry::factory()->for($feed)->create();
+        $entry->delete();
+
+        $response = $this->actingAs($user)->get('/entries');
+
+        $response->assertInertia(fn ($page) => $page->has('entries.data', 0));
+    }
+
     public function test_guests_cannot_access_entries(): void
     {
         $response = $this->get('/entries');

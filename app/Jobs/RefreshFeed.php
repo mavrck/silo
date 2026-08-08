@@ -72,6 +72,13 @@ class RefreshFeed implements ShouldQueue
     {
         $guid = $item->getPublicId() ?: sha1(($item->getLink() ?? '').'|'.($item->getTitle() ?? ''));
 
+        // A user who deleted this entry doesn't want it to silently
+        // reappear just because the upstream feed still serves the same
+        // guid on the next refresh.
+        if ($this->feed->entries()->onlyTrashed()->where('guid', $guid)->exists()) {
+            return;
+        }
+
         $entry = $this->feed->entries()->updateOrCreate(
             ['guid' => $guid],
             [

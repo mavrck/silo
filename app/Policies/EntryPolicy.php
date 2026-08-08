@@ -21,4 +21,9 @@ class EntryPolicy
     {
         return $user->id === $entry->feed->user_id;
     }
+
+    public function delete(User $user, Entry $entry): bool
+    {
+        return $user->id === $entry->feed->user_id;
+    }
 }

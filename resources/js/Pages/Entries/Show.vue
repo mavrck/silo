@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -44,6 +45,14 @@ function toggleStar() {
         {},
         { preserveScroll: true },
     );
+}
+
+function deleteEntry() {
+    if (!confirm('Delete this entry? This cannot be undone.')) {
+        return;
+    }
+
+    router.delete(route('entries.destroy', props.entry.id));
 }
 
 function formatDate(value: string | null): string {
@@ -107,6 +116,9 @@ function removeTag(tag: Tag) {
                     <SecondaryButton @click="markUnread">
                         Mark unread
                     </SecondaryButton>
+                    <DangerButton @click="deleteEntry">
+                        Delete
+                    </DangerButton>
                 </div>
             </div>
         </template>

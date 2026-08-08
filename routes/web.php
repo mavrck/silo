@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/feeds/{feed}/translate', [FeedController::class, 'updateTranslation'])->name('feeds.translate');
     Route::patch('/feeds/{feed}/digest', [FeedController::class, 'updateDigest'])->name('feeds.digest');
     Route::patch('/feeds/{feed}/mark-all-read', [FeedController::class, 'markAllRead'])->name('feeds.mark-all-read');
+    Route::delete('/feeds/{feed}/delete-read', [FeedController::class, 'deleteRead'])->name('feeds.delete-read');
 
     Route::get('/opml/export', [OpmlController::class, 'export'])->name('opml.export');
     Route::post('/opml/import', [OpmlController::class, 'import'])->name('opml.import');
@@ -49,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/entries', [EntryController::class, 'index'])->name('entries.index');
     Route::patch('/entries/mark-all-read', [EntryController::class, 'markAllRead'])->name('entries.mark-all-read');
     Route::get('/entries/{entry}', [EntryController::class, 'show'])->name('entries.show');
+    Route::delete('/entries/{entry}', [EntryController::class, 'destroy'])->name('entries.destroy');
     Route::patch('/entries/{entry}/read', [EntryController::class, 'markRead'])->name('entries.read');
     Route::patch('/entries/{entry}/unread', [EntryController::class, 'markUnread'])->name('entries.unread');
     Route::patch('/entries/{entry}/star', [EntryController::class, 'toggleStar'])->name('entries.star');

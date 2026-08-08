@@ -7,6 +7,7 @@ withDefaults(
     defineProps<{
         entries: Paginated<Entry>;
         toggleStar: (entry: Entry) => void;
+        deleteEntry: (entry: Entry) => void;
         showFeedName?: boolean;
         emptyMessage?: string;
     }>(),
@@ -97,6 +98,14 @@ function formatDate(value: string | null): string {
                     @click="toggleStar(entry)"
                 >
                     &#9733;
+                </button>
+                <button
+                    type="button"
+                    class="shrink-0 text-base leading-none text-gray-300 hover:text-red-500 dark:text-gray-600"
+                    aria-label="Delete"
+                    @click="deleteEntry(entry)"
+                >
+                    &#128465;
                 </button>
             </div>
         </li>
